@@ -5,7 +5,7 @@ O sistema SHALL exibir, no final da tela de Perfil, um card "Sobre o app" com o 
 
 #### Scenario: Card visível no Perfil
 - **WHEN** o usuário abre a aba Perfil
-- **THEN** o card "Sobre o app" aparece após a seção "Dados", com a versão `1.1.0`, o link do GitHub e a chave Pix
+- **THEN** o card "Sobre o app" aparece após a seção "Dados", com o link do GitHub e a chave Pix, e o rodapé com a versão `1.2.0` logo abaixo
 
 #### Scenario: Card ausente nas outras abas
 - **WHEN** o usuário está na aba Diário ou Progresso
@@ -48,13 +48,13 @@ O sistema SHALL mostrar a versão do app ao usuário, lida de uma constante úni
 
 #### Scenario: Versão coincide com a documentação
 - **WHEN** a versão exibida no card é comparada com a "Versão atual" do `README.md`
-- **THEN** ambas são `1.1.0`
+- **THEN** ambas são `1.2.0`
 
 ### Requirement: Sem alteração nos dados do usuário
 O sistema SHALL manter inalterados o formato e o conteúdo dos dados salvos no `localStorage` (chave `pratocheio`).
 
 #### Scenario: Dados existentes preservados
-- **WHEN** um usuário com registros salvos abre o app na versão `1.1.0`
+- **WHEN** um usuário com registros salvos abre o app na versão `1.2.0`
 - **THEN** todos os registros, metas e pesos continuam disponíveis sem migração
 
 #### Scenario: Apagar dados não afeta o card

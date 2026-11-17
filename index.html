@@ -91,6 +91,9 @@ svg text{fill:var(--mut);font-size:10px;font-family:inherit}
 .ver{text-align:center;color:var(--mut);font-size:12px;margin:16px 0 0}
 #toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(76px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:10px 14px;border-radius:12px;font-size:13px;z-index:20;max-width:90%;text-align:center}
 #toast[hidden]{display:none}
+.about a{color:var(--gd);font-weight:600;word-break:break-all}
+.about .pix{font-size:12px;margin-bottom:10px;overflow-x:auto;text-overflow:clip}
+.about .lk{margin:0 0 14px}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
@@ -101,6 +104,7 @@ svg text{fill:var(--mut);font-size:10px;font-family:inherit}
 <div id="toast" role="status" aria-live="polite" hidden></div>
 <script>
 const FOODS=[["Arroz branco cozido",128,28.1,2.5,.2],["Arroz integral cozido",124,25.8,2.6,1],["Feijão carioca cozido",76,13.6,4.8,.5],["Feijão preto cozido",77,14,4.5,.5],["Peito de frango grelhado",159,0,32,2.5],["Patinho grelhado",219,0,35.9,7.3],["Carne moída refogada",212,0,26,12],["Ovo cozido",146,.6,13.3,9.5],["Ovo mexido",160,1.5,11,12],["Pão francês",300,58.6,8,3.1],["Pão integral",253,49,9.4,3.4],["Queijo mussarela",330,3,22,25],["Queijo minas frescal",264,3.2,17,20],["Presunto",128,1.5,15,6.5],["Leite integral",61,4.6,3.2,3.3],["Leite desnatado",35,5,3.4,.1],["Iogurte natural",51,4.7,4.1,1.5],["Banana prata",98,26,1.3,.1],["Maçã",56,15.2,.3,0],["Laranja",46,11.5,1,.1],["Mamão",40,10.4,.5,.1],["Abacate",96,6,1.2,8.4],["Morango",30,6.8,.9,.3],["Uva",53,13.6,.7,.2],["Manga",64,16.7,.4,.3],["Batata cozida",52,11.9,1.2,0],["Batata-doce cozida",77,18.4,.6,.1],["Mandioca cozida",125,30,.6,.3],["Macarrão cozido",102,19.9,3.4,.5],["Cuscuz de milho",113,25,2.2,.7],["Tapioca (goma hidratada)",240,60,0,0],["Aveia em flocos",394,66,13.9,8.5],["Granola",420,64,9,14],["Amendoim",567,16,26,49],["Castanha-do-pará",643,15,14.5,63.5],["Azeite de oliva",884,0,0,100],["Manteiga",726,0,.4,82],["Alface",11,1.7,1.4,.2],["Tomate",15,3.1,1.1,.2],["Brócolis cozido",25,4.4,2.1,.5],["Cenoura cozida",30,6.7,.8,.2],["Salmão grelhado",229,0,23,15],["Tilápia grelhada",128,0,26,2.7],["Whey protein",400,8,80,6],["Café sem açúcar",2,.3,.1,0],["Açúcar",387,99.5,0,0],["Chocolate ao leite",540,59,7.5,30]].map(a=>({n:a[0],k:a[1],c:a[2],p:a[3],f:a[4]}));
+const GITHUB_URL="https://github.com/Wiooll",PIX_KEY="ae34b296-d003-4444-9d52-49e9399f45ab";
 const MEALS=[["cafe","Café da manhã"],["almoco","Almoço"],["jantar","Jantar"],["lanche","Lanches"]];
 const UN={"Arroz branco cozido":["colher de servir","colheres de servir",60],"Arroz integral cozido":["colher de servir","colheres de servir",60],"Feijão carioca cozido":["concha","conchas",86],"Feijão preto cozido":["concha","conchas",86],"Peito de frango grelhado":["filé","filés",100],"Patinho grelhado":["bife","bifes",100],"Carne moída refogada":["colher de servir","colheres de servir",50],"Ovo cozido":["unidade","unidades",50],"Ovo mexido":["unidade","unidades",50],"Pão francês":["unidade","unidades",50],"Pão integral":["fatia","fatias",25],"Queijo mussarela":["fatia","fatias",20],"Queijo minas frescal":["fatia","fatias",30],"Presunto":["fatia","fatias",15],"Leite integral":["copo","copos",200],"Leite desnatado":["copo","copos",200],"Iogurte natural":["pote","potes",170],"Banana prata":["unidade","unidades",70],"Maçã":["unidade","unidades",130],"Laranja":["unidade","unidades",180],"Mamão":["fatia","fatias",150],"Abacate":["colher de sopa","colheres de sopa",30],"Morango":["unidade","unidades",12],"Uva":["unidade","unidades",6],"Manga":["unidade","unidades",200],"Batata cozida":["unidade","unidades",120],"Batata-doce cozida":["unidade","unidades",130],"Mandioca cozida":["pedaço","pedaços",60],"Macarrão cozido":["pegador","pegadores",110],"Cuscuz de milho":["fatia","fatias",100],"Tapioca (goma hidratada)":["unidade","unidades",80],"Aveia em flocos":["colher de sopa","colheres de sopa",15],"Granola":["colher de sopa","colheres de sopa",15],"Amendoim":["punhado","punhados",30],"Castanha-do-pará":["unidade","unidades",4],"Azeite de oliva":["colher de sopa","colheres de sopa",13],"Manteiga":["colher de chá","colheres de chá",5],"Alface":["folha","folhas",10],"Tomate":["unidade","unidades",100],"Brócolis cozido":["ramo","ramos",25],"Cenoura cozida":["colher de sopa","colheres de sopa",20],"Salmão grelhado":["filé","filés",120],"Tilápia grelhada":["filé","filés",120],"Whey protein":["dose","doses",30],"Café sem açúcar":["xícara","xícaras",50],"Açúcar":["colher de chá","colheres de chá",5],"Chocolate ao leite":["quadradinho","quadradinhos",5]};
 const ud=f=>f.u||UN[f.n]||["porção","porções",100];
@@ -119,7 +123,7 @@ const def=()=>({p:{sex:"f",age:30,h:165,w:70,tw:65,act:1.375,goal:"lose",kcal:18
    A chave publicável é pública por natureza; a proteção dos dados é feita por RLS no banco. */
 const SUPABASE_URL="https://sclzuaoqxjstanugvyyq.supabase.co";
 const SUPABASE_KEY="sb_publishable_slijF86mJygHkuv2qnsY-g_RawQNbii";
-const VERSAO="1.1.0";
+const VERSAO="1.2.0";
 const lsGet=k=>{try{return localStorage.getItem(k)}catch(e){return null}};
 const lsSet=(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}};
 const lsDel=k=>{try{localStorage.removeItem(k)}catch(e){}};
@@ -358,6 +362,10 @@ function profile(){
   <button class="btn sec" data-a="calc" style="margin-bottom:10px">Calcular meta sugerida</button><button class="btn" data-a="savep">Salvar perfil</button>
   <p class="note">A sugestão usa a fórmula de Mifflin-St Jeor, com 500 kcal a menos para perder peso e 300 a mais para ganhar massa. Os macros seguem a divisão 45% carboidratos, 25% proteínas e 30% gorduras. Para metas clínicas, consulte um nutricionista.</p></div>
   <div class="card"><h2>Dados</h2><p class="note" style="margin:0 0 12px">${U?"Seus dados ficam salvos na sua conta e também neste navegador, para uso sem internet.":"Modo visitante: tudo fica salvo apenas neste navegador."}</p><button class="btn dng" data-a="reset">Apagar todos os dados</button></div>
+  <div class="card about"><h2>Sobre o app</h2>
+  <p class="note" style="margin:0 0 12px">Quer colaborar com o desenvolvimento? A contribuição é voluntária e pode ser feita com código no GitHub ou com apoio via Pix.</p>
+  <p class="lk"><label>GitHub</label><a href="${esc(GITHUB_URL)}" target="_blank" rel="noopener noreferrer">${esc(GITHUB_URL.replace("https://",""))}</a></p>
+  <label for="pixkey">Chave Pix</label><input id="pixkey" class="pix" readonly value="${esc(PIX_KEY)}"><button class="btn sec" data-a="copypix">Copiar chave Pix</button></div>
   <p class="ver">EmagrecAI v${VERSAO}</p>`;
 }
 const GLOGO='<svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.5 5.4 2.6 13.2l7.9 6.1C12.4 13.6 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.6 3-2.3 5.5-4.8 7.2l7.5 5.8c4.4-4.1 7.1-10.1 7.1-17.5z"/><path fill="#FBBC05" d="M10.5 28.7c-.5-1.5-.8-3-.8-4.7s.3-3.2.8-4.7l-7.9-6.1C1 16.4 0 20.1 0 24s1 7.6 2.6 10.8l7.9-6.1z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.5-5.8c-2.1 1.4-4.8 2.3-8.4 2.3-6.3 0-11.6-4.1-13.5-9.8l-7.9 6.1C6.5 42.6 14.6 48 24 48z"/></svg>';
@@ -411,10 +419,19 @@ document.addEventListener("click",e=>{
   else if(a==="savep"){S.p=readP();commit("profile.set",()=>rowProfile(S.p));view="diario";render()}
   else if(a==="login")login();
   else if(a==="logout")logout();
+  else if(a==="copypix")copyPix(t);
   else if(a==="reset"){if(confirm(U?"Apagar todos os registros e metas da sua conta? Os dados do modo visitante deste navegador não serão apagados.":"Apagar todos os registros e metas do modo visitante deste navegador? Os dados das contas não serão apagados.")){resetAll();render()}}
 });
 addEventListener("online",()=>{if(U&&sb&&ready)syncAll()});
 document.addEventListener("visibilitychange",()=>{if(!document.hidden&&U&&sb&&ready&&Date.now()-lastPull>30000)syncAll()});
+function copyPix(btn){
+  const txt=btn.textContent;
+  const done=m=>{btn.textContent=m;clearTimeout(btn._t);btn._t=setTimeout(()=>{btn.textContent=txt},2000)};
+  const old=()=>{try{const i=$("#pixkey");i.select();return document.execCommand("copy")}catch(e){return false}};
+  if(navigator.clipboard&&window.isSecureContext)navigator.clipboard.writeText(PIX_KEY).then(()=>done("Chave copiada!"),()=>done(old()?"Chave copiada!":"Copie manualmente"));
+  else done(old()?"Chave copiada!":"Copie manualmente");
+}
+document.addEventListener("focusin",e=>{if(e.target.id==="pixkey")e.target.select()});
 document.addEventListener("keydown",e=>{if(e.key==="Escape"&&sh)closeSheet()});
 render();
 if(loginErr)toast("Não foi possível entrar com o Google. Tente novamente.");

@@ -19,7 +19,7 @@ O app é um único `index.html` (HTML, CSS e JavaScript) sem build. As telas sã
 O Perfil já reúne configurações e a seção "Dados". Uma quarta aba na navegação gastaria espaço fixo em tela para um conteúdo de uso raro. Alternativa descartada: botão "ⓘ" no cabeçalho do Diário abrindo um sheet. Exigiria novo estado e novo fluxo de fechamento.
 
 **2. Constantes únicas para os valores.**
-`const APP_VERSION="1.1.0"`, `GITHUB_URL` e `PIX_KEY` ficam juntos, perto das demais constantes do script. A tela e o handler de cópia leem delas. Evita repetir o valor e facilita a troca.
+`GITHUB_URL` e `PIX_KEY` ficam juntas, perto das demais constantes do script. A tela e o handler de cópia leem delas. A versão reaproveita a constante `VERSAO` que já existe (atualizada para `"1.2.0"`), sem criar uma segunda fonte do número.
 
 **3. Link externo seguro.**
 `<a href="${GITHUB_URL}" target="_blank" rel="noopener noreferrer">`. Os valores são constantes do código, não entrada do usuário, mas passam por `esc()` ao serem interpolados, para manter o padrão do arquivo.
@@ -35,12 +35,11 @@ Alternativa descartada: mostrar a chave só dentro de um botão. Em caso de falh
 A chave é aleatória (UUID) e pública por decisão do autor. Ela aparece completa para o usuário conferir antes de pagar. Não há dado sensível do usuário envolvido.
 
 **6. Versão exibida ao usuário.**
-Linha "Versão 1.1.0" dentro do card, lendo `APP_VERSION`. O `README.md` mantém o mesmo número e o histórico de versões.
+O rodapé "EmagrecAI v1.2.0" do Perfil, que lê `VERSAO`, já existe e fica logo abaixo do card. Repetir a versão dentro do card seria redundante. O `README.md` mantém o mesmo número e o histórico de versões.
 
 ## Risks / Trade-offs
 
 - [Clipboard bloqueado em `file://` ou em navegadores antigos] → alternativa com `execCommand`, campo `readonly` com a chave selecionável e mensagem "Copie manualmente".
 - [Número de versão duplicado em `index.html` e `README.md`, podendo ficar divergente] → só dois lugares, com a lista de verificação nas tarefas. Não vale criar mecanismo de build para isso.
-- [Conflito de versão com `add-google-login` e `add-supabase-database`, que também planejam alterar a versão] → ajustar para o próximo número da sequência ao implementar quem vier depois.
 - [Chave Pix pública sujeita a uso indevido por terceiros] → o risco é nulo para o app, pois a chave só recebe valores. O autor assume a exposição.
 - [Texto longo quebra o layout em telas estreitas (UUID de 36 caracteres)] → o campo da chave usa fonte menor e `overflow` com rolagem horizontal no próprio campo, sem quebrar o card.

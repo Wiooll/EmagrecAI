@@ -2,7 +2,7 @@
 
 Diário alimentar simples para acompanhar calorias, macronutrientes, água e peso. Funciona em um único arquivo HTML, sem build. Com login Google, os dados ficam em um banco Supabase e sincronizam entre dispositivos.
 
-**Versão atual:** 1.1.0
+**Versão atual:** 1.2.0
 
 ## Funcionalidades
 
@@ -16,6 +16,7 @@ Diário alimentar simples para acompanhar calorias, macronutrientes, água e pes
 - Tema claro e escuro automático, de acordo com o sistema.
 - **Novo na 1.1.0:** login opcional com Google e sincronização dos dados entre dispositivos (Supabase).
 - **Novo na 1.1.0:** uso sem internet. As alterações ficam em uma fila e são enviadas quando a conexão volta.
+- **Novo na 1.2.0:** card "Sobre o app" no Perfil, com o link do GitHub do autor e a chave Pix (com botão para copiar) para quem quiser colaborar com o desenvolvimento. As constantes `GITHUB_URL` e `PIX_KEY` ficam no `index.html`.
 
 ## Como executar
 
@@ -66,5 +67,6 @@ As informações nutricionais são aproximadas e não substituem orientação pr
 
 ## Histórico de versões
 
+- **1.2.0**: card "Sobre o app" no Perfil, com link do GitHub e chave Pix copiável para colaboração com o desenvolvimento.
 - **1.1.0**: banco de dados Supabase, login opcional com Google, sincronização entre dispositivos, fila de gravações offline e importação opcional dos dados do visitante. Versão exibida no rodapé do Perfil.
 - **1.0.0**: versão inicial publicada no GitHub.

@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-uANP0LeM6DnY6WLAohsNQSsGkFGy9zzNfeEZOBmPw3k=' https://cdn.jsdelivr.net; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://*.googleusercontent.com; connect-src https://sclzuaoqxjstanugvyyq.supabase.co; base-uri 'none'; form-action 'none'">
 <title>EmagrecAI – Diário nutricional</title>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
@@ -123,7 +124,7 @@ const def=()=>({p:{sex:"f",age:30,h:165,w:70,tw:65,act:1.375,goal:"lose",kcal:18
    A chave publicável é pública por natureza; a proteção dos dados é feita por RLS no banco. */
 const SUPABASE_URL="https://sclzuaoqxjstanugvyyq.supabase.co";
 const SUPABASE_KEY="sb_publishable_slijF86mJygHkuv2qnsY-g_RawQNbii";
-const VERSAO="1.2.0";
+const VERSAO="1.2.1";
 const lsGet=k=>{try{return localStorage.getItem(k)}catch(e){return null}};
 const lsSet=(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}};
 const lsDel=k=>{try{localStorage.removeItem(k)}catch(e){}};
@@ -300,7 +301,19 @@ async function login(){
   try{const{error}=await sb.auth.signInWithOAuth({provider:"google",options:{redirectTo:location.origin+location.pathname}});if(error)throw error}
   catch(e){toast("Não foi possível entrar com o Google. Tente novamente.")}
 }
-async function logout(){if(!sb)return;try{await sb.auth.signOut({scope:"local"})}catch(e){}if(U)leave()}
+/* Ao sair, apaga do navegador o cache, a fila e a recusa de importação da conta (dados de saúde),
+   para não ficarem acessíveis em computador compartilhado. Tenta enviar as pendências antes. */
+async function logout(){
+  if(!sb)return;
+  const me=U&&U.id;
+  if(me){
+    try{await flush()}catch(e){}
+    if(readQ(me).length&&!confirm("Há alterações que ainda não foram enviadas para a nuvem. Se você sair agora, elas serão perdidas. Deseja sair mesmo assim?"))return;
+  }
+  try{await sb.auth.signOut({scope:"local"})}catch(e){}
+  if(U)leave();
+  if(me)["pratocheio:"+me,"pratocheio:fila:"+me,"pratocheio:recusou:"+me].forEach(lsDel);
+}
 function resetAll(){S=def();commit("data.reset",()=>({user_id:U.id}))}
 (function(){const q=new URLSearchParams(location.search),h=new URLSearchParams(location.hash.slice(1));if(q.get("error")||h.get("error")){loginErr=true;history.replaceState(null,"",location.pathname)}})();
 let cur=new Date(),view="diario",sh=null;
@@ -435,7 +448,8 @@ document.addEventListener("focusin",e=>{if(e.target.id==="pixkey")e.target.selec
 document.addEventListener("keydown",e=>{if(e.key==="Escape"&&sh)closeSheet()});
 render();
 if(loginErr)toast("Não foi possível entrar com o Google. Tente novamente.");
+/* Biblioteca carregada por script (a CSP bloqueia onload/onerror inline). Versão fixa com SRI. */
+(function(){const s=document.createElement("script");s.src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.0/dist/umd/supabase.js";s.integrity="sha384-uteMfOloLDGt042uDz+xHGF3ym63/WQ6rFq7murQRG8Ih7QrXGEGNtWd8688sb4O";s.crossOrigin="anonymous";s.async=true;s.onload=initAuth;s.onerror=()=>authOff("");document.head.appendChild(s)})();
 </script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.0/dist/umd/supabase.js" integrity="sha384-uteMfOloLDGt042uDz+xHGF3ym63/WQ6rFq7murQRG8Ih7QrXGEGNtWd8688sb4O" crossorigin="anonymous" async onload="initAuth()" onerror="authOff('')"></script>
 </body>
 </html>

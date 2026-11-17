@@ -9,8 +9,8 @@
 
 ## 2. Login com Google (Supabase Auth)
 
-- [ ] 2.1 Criar o OAuth Client no Google Cloud e ativar o provedor Google no painel do Supabase (o Client Secret fica só no painel)
-- [ ] 2.2 Cadastrar as Redirect URLs (`http://localhost:<porta>` e o domínio hospedado, quando existir) em *Authentication → URL Configuration*
+- [x] 2.1 Criar o OAuth Client no Google Cloud e ativar o provedor Google no painel do Supabase (o Client Secret fica só no painel)
+- [x] 2.2 Cadastrar as Redirect URLs (`http://localhost:<porta>` e o domínio hospedado, quando existir) em *Authentication → URL Configuration*
 - [x] 2.3 Adicionar ao HTML as constantes `SUPABASE_URL`, `SUPABASE_KEY` e `VERSAO="1.1.0"`, e o script `@supabase/supabase-js` com versão fixa, `integrity` (SRI) e `crossorigin`
 - [x] 2.4 Criar o cliente com `flowType:"pkce"`, `persistSession`, `autoRefreshToken` e `detectSessionInUrl`, tratando biblioteca ausente, configuração vazia e `file://` como "Login indisponível"
 - [x] 2.5 Implementar `onAuthStateChange` sem chamadas ao Supabase dentro do callback (usar `setTimeout(..., 0)`), tratando `INITIAL_SESSION`, `SIGNED_IN` e `SIGNED_OUT`
@@ -50,7 +50,7 @@
 ## 7. Verificação
 
 - [x] 7.1 Visitante: abrir a nova versão com dados existentes em `pratocheio` e confirmar que tudo aparece igual e que não há requisições ao Supabase
-- [ ] 7.2 Login: entrar com Google, conferir nome, foto e e-mail, recarregar a página e confirmar que a sessão continua
+- [x] 7.2 Login: entrar com Google, conferir nome, foto e e-mail, recarregar a página e confirmar que a sessão continua
 - [x] 7.3 Importação: aceitar e recusar o envio dos dados do visitante e conferir as linhas no banco sem duplicatas; `pratocheio` intacta nos dois casos
 - [x] 7.4 Sincronização: registrar um alimento em um dispositivo e vê-lo em outro ao voltar à aba, sem recarregar
 - [x] 7.5 Offline: gravar sem conexão, ver "N alterações pendentes", reconectar e ver "Sincronizado" sem duplicar linhas

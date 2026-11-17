@@ -1,0 +1,25 @@
+# Segredos e variáveis de ambiente
+.env
+.env.*
+!.env.example
+
+# Configurações locais do Kiro (podem conter credenciais de MCP)
+.kiro/settings/
+
+# Dependências e builds
+node_modules/
+dist/
+build/
+
+# Logs e temporários
+*.log
+*.tmp
+
+# Sistema operacional
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editores
+.vscode/
+.idea/

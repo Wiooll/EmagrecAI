@@ -16,7 +16,7 @@ O app é usado quase só no celular, mas o layout foi pensado de forma genérica
   - Cor da barra do navegador (`theme-color`) acompanhando o tema claro e escuro.
 - **Instalação como PWA**
   - Novo `manifest.webmanifest` (nome, nome curto, `display: standalone`, cores, ícones).
-  - Ícones PNG 192, 512, 512 maskable e `apple-touch-icon` 180, mais um ícone SVG de origem.
+  - Ícones PNG 192, 512, 512 maskable e `apple-touch-icon` 180, gerados a partir da imagem do ícone enviada pelo autor (balança verde com fita métrica).
   - Novo `sw.js` (service worker) que guarda o app em cache para abrir sem internet e atualiza em segundo plano.
   - Card "Instalar app" no Perfil: botão de instalação no Android e no desktop (evento `beforeinstallprompt`) e instruções curtas para iOS (Safari > Compartilhar > Adicionar à Tela de Início). O card some quando o app já está instalado.
   - Aviso "Nova versão disponível" com botão para recarregar quando um novo service worker é encontrado.

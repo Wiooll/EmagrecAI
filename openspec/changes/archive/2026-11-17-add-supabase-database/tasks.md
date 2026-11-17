@@ -56,7 +56,7 @@
 - [x] 7.5 Offline: gravar sem conexão, ver "N alterações pendentes", reconectar e ver "Sincronizado" sem duplicar linhas
 - [x] 7.6 Operação inválida: forçar uma linha que viola um `CHECK` e confirmar o aviso e a continuidade da fila
 - [x] 7.7 Duas contas no mesmo navegador: sair de A, entrar em B e confirmar que só os dados de B aparecem
-- [ ] 7.8 Apagar dados: testar como visitante e logado (online e offline) e confirmar que apenas o contexto ativo é afetado e que a sessão continua
-- [ ] 7.9 Falhas: bloquear o script do Supabase e abrir por `file://`, confirmando "Login indisponível" e o app utilizável em modo visitante
+- [x] 7.8 Apagar dados: testar como visitante e logado (online e offline) e confirmar que apenas o contexto ativo é afetado e que a sessão continua
+- [x] 7.9 Falhas: bloquear o script do Supabase e abrir por `file://`, confirmando "Login indisponível" e o app utilizável em modo visitante
 - [x] 7.10 Conferir a ortografia pt-BR da interface, o tema escuro e o console do navegador sem erros
 - [x] 7.11 Redigir o resumo das alterações em pt-BR para a descrição do commit

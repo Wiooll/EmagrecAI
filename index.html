@@ -11,7 +11,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="EmagrecAI">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-LwwYAL6NFSwhap7HFo9DrTNPaxo+pLBgP8aDcMIpQ9A=' https://cdn.jsdelivr.net; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://*.googleusercontent.com; connect-src https://sclzuaoqxjstanugvyyq.supabase.co; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-HnILlLGVn32grRGZClKdsjbuy9pnYSFsoopUXaAkcLw=' https://cdn.jsdelivr.net; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://*.googleusercontent.com; connect-src https://sclzuaoqxjstanugvyyq.supabase.co; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
 <title>EmagrecAI – Diário nutricional</title>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
@@ -31,7 +31,10 @@ h1,h2,h3{margin:0}
 .top h1{font-size:20px;font-weight:800;letter-spacing:-.02em;white-space:nowrap}
 .dnav{display:flex;align-items:center;gap:4px}
 .dnav button{width:var(--tap);height:var(--tap);border-radius:50%;background:var(--sf);border:1px solid var(--ln);font-size:18px}
+.dnav button:disabled{opacity:.35;cursor:default}
 .dnav span{min-width:84px;text-align:center;font-weight:600;text-transform:capitalize}
+.dnav.mes{justify-content:space-between;margin-bottom:4px}
+.dnav.mes span{text-transform:none}
 .card{background:var(--sf);border:1px solid var(--ln);border-radius:20px;padding:16px;margin-bottom:12px}
 .hero{display:flex;align-items:center;gap:18px}
 .ring{position:relative;width:150px;height:150px;flex:none}
@@ -150,7 +153,7 @@ const def=()=>({p:{sex:"f",age:30,h:165,w:70,tw:65,act:1.375,goal:"lose",kcal:18
    A chave publicável é pública por natureza; a proteção dos dados é feita por RLS no banco. */
 const SUPABASE_URL="https://sclzuaoqxjstanugvyyq.supabase.co";
 const SUPABASE_KEY="sb_publishable_slijF86mJygHkuv2qnsY-g_RawQNbii";
-const VERSAO="1.3.0";
+const VERSAO="1.4.0";
 const lsGet=k=>{try{return localStorage.getItem(k)}catch(e){return null}};
 const lsSet=(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}};
 const lsDel=k=>{try{localStorage.removeItem(k)}catch(e){}};
@@ -342,7 +345,7 @@ async function logout(){
 }
 function resetAll(){S=def();commit("data.reset",()=>({user_id:U.id}))}
 (function(){const q=new URLSearchParams(location.search),h=new URLSearchParams(location.hash.slice(1));if(q.get("error")||h.get("error")){loginErr=true;history.replaceState(null,"",location.pathname)}})();
-let cur=new Date(),view="diario",sh=null;
+let cur=new Date(),view="diario",sh=null,mes={a:cur.getFullYear(),m:cur.getMonth()};
 const day=k=>S.log[k]||(S.log[k]={cafe:[],almoco:[],jantar:[],lanche:[]});
 function tot(k){const t={k:0,c:0,p:0,f:0},d=S.log[k];if(d)for(const m in d)d[m].forEach(e=>{t.k+=e.k;t.c+=e.c;t.p+=e.p;t.f+=e.f});return t}
 function dlabel(){const t=new Date(),y=new Date();y.setDate(t.getDate()-1);const k=key(cur);if(k===key(t))return"Hoje";if(k===key(y))return"Ontem";return cur.toLocaleDateString("pt-BR",{weekday:"short",day:"numeric",month:"short"}).replace(".","")}
@@ -371,6 +374,64 @@ function diary(){
   h+=`<div class="card"><div class="water"><div><h3 style="font-size:16px">Água</h3><div style="color:var(--mut);font-size:13px">${f1(w/1000)} de ${f1(P.wg/1000)} L</div></div><div style="display:flex;gap:8px"><button class="rnd" data-a="water" data-d="-250" aria-label="Remover copo">−</button><button class="rnd" data-a="water" data-d="250" aria-label="Adicionar copo" style="background:var(--p);color:#fff;border-color:var(--p)">+</button></div></div><div class="gl">${Array.from({length:n},(_,i)=>`<i class="${i<w/250?"on":""}"></i>`).join("")}</div></div>`;
   return h;
 }
+/* Evolução mensal: tudo é calculado a partir de S, sem gravar nada no armazenamento nem no banco. */
+const sg=(n,f)=>{const s=f(Math.abs(n));return(s==="0"?"":n>0?"+":"−")+s};
+const mIdx=o=>o.a*12+o.m;
+const kv=a=>`<div class="pv" style="grid-template-columns:repeat(${a.length},1fr)">${a.map(x=>`<div><b>${x[0]}</b><small>${x[1]}</small></div>`).join("")}</div>`;
+function limitesMes(){
+  const t=new Date(),max=t.getFullYear()*12+t.getMonth(),ks=[];
+  for(const k in S.weights)if(DAY.test(k)&&Number.isFinite(S.weights[k])&&S.weights[k]>0)ks.push(k);
+  for(const k in S.water)if(DAY.test(k)&&S.water[k]>0)ks.push(k);
+  for(const k in S.log)if(DAY.test(k)&&tot(k).k>0)ks.push(k);
+  if(!ks.length)return[max,max];
+  ks.sort();
+  return[Math.min(max,+ks[0].slice(0,4)*12+ +ks[0].slice(5,7)-1),max];
+}
+function mesVizinho(d){
+  const[mn,mx]=limitesMes(),i=mIdx(mes)+d;
+  return i<mn||i>mx?null:{a:Math.floor(i/12),m:i%12};
+}
+function resumoMes(a,m){
+  const n=new Date(a,m+1,0).getDate(),r={a,m,n,pesos:[],kcal:[],dk:0,sk:0,acima:0,da:0,sa:0,aguaOk:0};
+  for(let d=1;d<=n;d++){
+    const k=key(new Date(a,m,d)),w=S.weights[k],kc=tot(k).k,ml=S.water[k];
+    if(Number.isFinite(w)&&w>0)r.pesos.push([d,w]);
+    r.kcal.push(Number.isFinite(kc)&&kc>0?kc:0);
+    if(r.kcal[d-1]>0){r.dk++;r.sk+=kc;if(kc>S.p.kcal)r.acima++}
+    if(Number.isFinite(ml)&&ml>0){r.da++;r.sa+=ml;if(ml>=S.p.wg)r.aguaOk++}
+  }
+  const p=r.pesos;
+  r.mk=r.dk?r.sk/r.dk:0;r.ma=r.da?r.sa/r.da:0;
+  r.p0=p.length?p[0][1]:null;r.p1=p.length?p[p.length-1][1]:null;r.dp=p.length>1?r.p1-r.p0:null;
+  return r;
+}
+function graficoPesoMes(r){
+  const W=340,H=150,tw=S.p.tw,vals=r.pesos.map(x=>x[1]),mn=Math.min(...vals,tw)-1,mx=Math.max(...vals,tw)+1;
+  const X=d=>20+(d-1)*(W-30)/(r.n-1),Y=v=>H-20-(v-mn)/(mx-mn)*(H-40),mm=pad(r.m+1);
+  return`<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Evolução do peso no mês"><line x1="20" x2="${W-10}" y1="${Y(tw)}" y2="${Y(tw)}" stroke="var(--g)" stroke-dasharray="4 4"/><text x="${W-10}" y="${Y(tw)-4}" text-anchor="end">meta ${f1(tw)}</text>${r.pesos.length>1?`<polyline fill="none" stroke="var(--g)" stroke-width="2.5" stroke-linejoin="round" points="${r.pesos.map(x=>X(x[0])+","+Y(x[1])).join(" ")}"/>`:""}${r.pesos.map(x=>`<circle cx="${X(x[0])}" cy="${Y(x[1])}" r="3.5" fill="var(--g)"/>`).join("")}<text x="20" y="${H-4}">01/${mm}</text><text x="${W-10}" y="${H-4}" text-anchor="end">${r.n}/${mm}</text><text x="2" y="${Y(mx-1)+3}">${fmt(mx-1)}</text><text x="2" y="${Y(mn+1)+3}">${fmt(mn+1)}</text></svg>`;
+}
+function graficoKcalMes(r){
+  const BW=340,BH=140,g=S.p.kcal,sl=(BW-20)/r.n,bw=Math.max(4,sl*.7),mxk=Math.max(g*1.2,...r.kcal),gy=BH-20-g/mxk*(BH-30);
+  const bars=r.kcal.map((v,i)=>{const h=v/mxk*(BH-30),x=10+i*sl+(sl-bw)/2,d=i+1;return(v>0?`<rect x="${x}" y="${BH-20-h}" width="${bw}" height="${h}" rx="2" fill="${v>g?"var(--f)":"var(--g)"}"/>`:"")+(d===1||d%5===0?`<text x="${x+bw/2}" y="${BH-6}" text-anchor="middle">${d}</text>`:"")}).join("");
+  return`<svg viewBox="0 0 ${BW} ${BH}" width="100%" role="img" aria-label="Calorias por dia no mês"><line x1="0" x2="${BW}" y1="${gy}" y2="${gy}" stroke="var(--mut)" stroke-dasharray="3 4"/>${bars}</svg>`;
+}
+function evolucaoMensal(){
+  const[mn,mx]=limitesMes(),i=Math.min(mx,Math.max(mn,mIdx(mes)));mes={a:Math.floor(i/12),m:i%12};
+  const pm=new Date(mes.a,mes.m-1,1),r=resumoMes(mes.a,mes.m),q=resumoMes(pm.getFullYear(),pm.getMonth());
+  const nome=new Date(mes.a,mes.m,1).toLocaleDateString("pt-BR",{month:"long",year:"numeric"}),P=S.p;
+  const sec=t=>`<h3 style="font-size:15px;margin:14px 0 0">${t}</h3>`;
+  let h=`<div class="card"><h2>Evolução mensal</h2><div class="dnav mes"><button data-a="mes" data-d="-1" aria-label="Mês anterior" ${mesVizinho(-1)?"":"disabled"}>‹</button><span aria-live="polite">${esc(nome.charAt(0).toUpperCase()+nome.slice(1))}</span><button data-a="mes" data-d="1" aria-label="Próximo mês" ${mesVizinho(1)?"":"disabled"}>›</button></div>`;
+  if(!r.pesos.length&&!r.dk&&!r.da)return h+`<p class="empty">Nenhum peso, refeição ou água registrados neste mês.</p></div>`;
+  h+=sec("Peso")+(r.pesos.length?kv([[f1(r.p0),"Primeiro (kg)"],[f1(r.p1),"Último (kg)"],[r.dp==null?"—":sg(r.dp,f1),"Variação (kg)"],[f1(Math.abs(r.p1-P.tw)),"Distância da meta (kg)"]])+graficoPesoMes(r):`<p class="empty">Nenhum peso registrado neste mês.</p>`);
+  h+=sec("Calorias")+(r.dk?kv([[fmt(r.mk),"Média (kcal/dia)"],[r.dk,"Dias registrados"],[r.acima,"Dias acima da meta"]])+graficoKcalMes(r)+`<p class="note">Linha tracejada: sua meta de ${fmt(P.kcal)} kcal.</p>`:`<p class="empty">Nenhuma refeição registrada neste mês.</p>`);
+  h+=sec("Água")+(r.da?kv([[f1(r.ma/1000),"Média (L/dia)"],[r.aguaOk,"Dias com a meta de água"]]):`<p class="empty">Nenhuma água registrada neste mês.</p>`);
+  const c=[];
+  if(r.dp!=null&&q.dp!=null)c.push(`Variação de peso: ${sg(r.dp,f1)} kg, contra ${sg(q.dp,f1)} kg no mês anterior (diferença de ${sg(r.dp-q.dp,f1)} kg).`);
+  if(r.dk&&q.dk)c.push(`${sg(r.mk-q.mk,fmt)} kcal na média diária em relação ao mês anterior.`);
+  if(c.length)h+=sec("Comparação com o mês anterior")+c.map(x=>`<p class="note">${x}</p>`).join("");
+  if(r.dk||r.da)h+=`<p class="note">Dias acima da meta e dias com a meta de água usam as metas atuais do perfil.</p>`;
+  return h+`</div>`;
+}
 function progress(){
   const P=S.p,ws=Object.entries(S.weights).sort((a,b)=>a[0]<b[0]?-1:1).slice(-30),k=key(new Date());
   const last=ws.length?ws[ws.length-1][1]:P.w,first=ws.length?ws[0][1]:P.w;
@@ -387,7 +448,8 @@ function progress(){
   return`<div class="top"><h1>Progresso</h1></div>
   <div class="card"><h2>Peso</h2><div class="grid2" style="margin-bottom:8px"><div><label>Peso de hoje (kg)</label><input id="wt" type="number" step="0.1" inputmode="decimal" value="${S.weights[k]||""}" placeholder="${f1(last)}"></div><div style="align-self:end"><button class="btn" data-a="savew">Salvar peso</button></div></div>
   <div class="sum"><span>Atual <b style="color:var(--ink)">${f1(last)} kg</b></span><span>Variação <b style="color:var(--ink)">${diff>0?"+":""}${f1(diff)} kg</b></span><span>Meta <b style="color:var(--ink)">${f1(P.tw)} kg</b></span></div>${chart}</div>
-  <div class="card"><h2>Calorias na semana</h2>${bars}<p class="note">${avg.length?`Média nos dias registrados: ${fmt(av)} kcal. Linha tracejada: sua meta de ${fmt(P.kcal)} kcal.`:"Registre refeições para ver sua média semanal."}</p></div>`;
+  <div class="card"><h2>Calorias na semana</h2>${bars}<p class="note">${avg.length?`Média nos dias registrados: ${fmt(av)} kcal. Linha tracejada: sua meta de ${fmt(P.kcal)} kcal.`:"Registre refeições para ver sua média semanal."}</p></div>
+  ${evolucaoMensal()}`;
 }
 function profile(){
   const P=S.p,o=(v,l,c)=>`<option value="${v}" ${String(c)===String(v)?"selected":""}>${l}</option>`;
@@ -444,6 +506,7 @@ document.addEventListener("click",e=>{
   const t=e.target.closest("[data-a]");if(!t)return;const a=t.dataset.a,k=key(cur);
   if(a==="view"){view=t.dataset.v;render();scrollTo(0,0)}
   else if(a==="day"){cur.setDate(cur.getDate()+ +t.dataset.d);render()}
+  else if(a==="mes"){const n=mesVizinho(+t.dataset.d);if(n){mes=n;render()}}
   else if(a==="open")openSheet(t.dataset.m);
   else if(a==="close")closeSheet();
   else if(a==="tab"){sh.tab=t.dataset.t;drawSheet()}

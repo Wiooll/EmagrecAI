@@ -46,7 +46,7 @@
 - [x] 6.3 Simular "Offline", recarregar e conferir que o app abre e registra uma refeição (a sincronização da fila com conta logada fica para o teste em aparelho real, tarefa 6.6)
 - [x] 6.4 Simular nova versão (alterar o `sw.js`) e conferir o aviso "Nova versão disponível"; a página só recarrega após tocar em "Atualizar" e o cache fica só com a versão atual
 - [x] 6.5 Emular 320 px e conferir: sem rolagem horizontal, alvos de 44 px, anel e macros legíveis e folha utilizável (430 px e 360 px ainda sem conferência visual)
-- [ ] 6.6 Testar em aparelho real Android (Chrome), se houver: instalar pelo botão, abrir em tela cheia, entrar com Google, abrir sem internet
-- [ ] 6.7 Testar no iPhone do autor (Safari, via GitHub Pages): ausência de zoom ao focar campos, Adicionar à Tela de Início, ícone sem fundo preto e login com Google no app instalado (registrar limitações no README, se houver)
+- [x] 6.6 Testar em aparelho real Android (Chrome), se houver: instalar pelo botão, abrir em tela cheia, entrar com Google, abrir sem internet
+- [x] 6.7 Testar no iPhone do autor (Safari, via GitHub Pages): ausência de zoom ao focar campos, Adicionar à Tela de Início, ícone sem fundo preto e login com Google no app instalado (registrar limitações no README, se houver)
 - [x] 6.8 Conferir ícones e manifesto no navegador (a ferramenta de Lighthouse disponível não tem a categoria PWA): os quatro ícones carregam nos tamanhos corretos, estão no cache e o console não mostra erros
 - [x] 6.9 Gerar o resumo das alterações para a descrição do commit em português do Brasil

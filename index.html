@@ -83,6 +83,14 @@ h2{font-size:17px;margin-bottom:12px}
 .sum{display:flex;justify-content:space-between;color:var(--mut);font-size:13px;margin-top:8px}
 .note{color:var(--mut);font-size:13px;margin:8px 0 0}
 svg text{fill:var(--mut);font-size:10px;font-family:inherit}
+.acc{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+.acc p{margin:0}
+.av{width:44px;height:44px;border-radius:50%;flex:none;object-fit:cover;background:var(--ln);display:grid;place-items:center;font-weight:700;color:var(--mut)}
+.gbtn{display:flex;align-items:center;justify-content:center;gap:10px;background:#fff;color:#3c4043;border:1px solid #dadce0}
+.gbtn svg{width:18px;height:18px;flex:none}
+.ver{text-align:center;color:var(--mut);font-size:12px;margin:16px 0 0}
+#toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(76px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:10px 14px;border-radius:12px;font-size:13px;z-index:20;max-width:90%;text-align:center}
+#toast[hidden]{display:none}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
@@ -90,6 +98,7 @@ svg text{fill:var(--mut);font-size:10px;font-family:inherit}
 <div id="app"></div>
 <div class="nav"><div id="nav"></div></div>
 <div id="sheet" hidden></div>
+<div id="toast" role="status" aria-live="polite" hidden></div>
 <script>
 const FOODS=[["Arroz branco cozido",128,28.1,2.5,.2],["Arroz integral cozido",124,25.8,2.6,1],["Feijão carioca cozido",76,13.6,4.8,.5],["Feijão preto cozido",77,14,4.5,.5],["Peito de frango grelhado",159,0,32,2.5],["Patinho grelhado",219,0,35.9,7.3],["Carne moída refogada",212,0,26,12],["Ovo cozido",146,.6,13.3,9.5],["Ovo mexido",160,1.5,11,12],["Pão francês",300,58.6,8,3.1],["Pão integral",253,49,9.4,3.4],["Queijo mussarela",330,3,22,25],["Queijo minas frescal",264,3.2,17,20],["Presunto",128,1.5,15,6.5],["Leite integral",61,4.6,3.2,3.3],["Leite desnatado",35,5,3.4,.1],["Iogurte natural",51,4.7,4.1,1.5],["Banana prata",98,26,1.3,.1],["Maçã",56,15.2,.3,0],["Laranja",46,11.5,1,.1],["Mamão",40,10.4,.5,.1],["Abacate",96,6,1.2,8.4],["Morango",30,6.8,.9,.3],["Uva",53,13.6,.7,.2],["Manga",64,16.7,.4,.3],["Batata cozida",52,11.9,1.2,0],["Batata-doce cozida",77,18.4,.6,.1],["Mandioca cozida",125,30,.6,.3],["Macarrão cozido",102,19.9,3.4,.5],["Cuscuz de milho",113,25,2.2,.7],["Tapioca (goma hidratada)",240,60,0,0],["Aveia em flocos",394,66,13.9,8.5],["Granola",420,64,9,14],["Amendoim",567,16,26,49],["Castanha-do-pará",643,15,14.5,63.5],["Azeite de oliva",884,0,0,100],["Manteiga",726,0,.4,82],["Alface",11,1.7,1.4,.2],["Tomate",15,3.1,1.1,.2],["Brócolis cozido",25,4.4,2.1,.5],["Cenoura cozida",30,6.7,.8,.2],["Salmão grelhado",229,0,23,15],["Tilápia grelhada",128,0,26,2.7],["Whey protein",400,8,80,6],["Café sem açúcar",2,.3,.1,0],["Açúcar",387,99.5,0,0],["Chocolate ao leite",540,59,7.5,30]].map(a=>({n:a[0],k:a[1],c:a[2],p:a[3],f:a[4]}));
 const MEALS=[["cafe","Café da manhã"],["almoco","Almoço"],["jantar","Jantar"],["lanche","Lanches"]];
@@ -104,9 +113,192 @@ const fmt=n=>Math.round(n).toLocaleString("pt-BR");
 const f1=n=>(Math.round(n*10)/10).toLocaleString("pt-BR");
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const def=()=>({p:{sex:"f",age:30,h:165,w:70,tw:65,act:1.375,goal:"lose",kcal:1800,wg:2000},log:{},water:{},weights:{},custom:[]});
+/* ===== Conta e sincronização (Supabase) =====
+   Visitante: dados em "pratocheio" (sem rede). Conta Google: dados no Supabase, com cache em
+   "pratocheio:<user_id>" e fila de gravações pendentes em "pratocheio:fila:<user_id>".
+   A chave publicável é pública por natureza; a proteção dos dados é feita por RLS no banco. */
+const SUPABASE_URL="https://sclzuaoqxjstanugvyyq.supabase.co";
+const SUPABASE_KEY="sb_publishable_slijF86mJygHkuv2qnsY-g_RawQNbii";
+const VERSAO="1.1.0";
+const lsGet=k=>{try{return localStorage.getItem(k)}catch(e){return null}};
+const lsSet=(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}};
+const lsDel=k=>{try{localStorage.removeItem(k)}catch(e){}};
+const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,DAY=/^\d{4}-\d{2}-\d{2}$/;
+const uid=()=>crypto.randomUUID?crypto.randomUUID():"10000000-1000-4000-8000-100000000000".replace(/[018]/g,c=>(c^crypto.getRandomValues(new Uint8Array(1))[0]&15>>c/4).toString(16));
+const cl=(v,a,b,d)=>{v=+v;return isFinite(v)?Math.min(b,Math.max(a,v)):d};
+const txt=(s,n)=>String(s==null?"":s).trim().slice(0,n);
+const okFoto=s=>{try{const u=new URL(s);return u.protocol==="https:"&&(u.hostname==="googleusercontent.com"||u.hostname.endsWith(".googleusercontent.com"))?u.href:""}catch(e){return""}};
+function lastUser(){try{const o=JSON.parse(lsGet("pratocheio:ultimo"));if(o&&UUID.test(o.id))return{id:o.id.toLowerCase(),nome:txt(o.nome,80),email:txt(o.email,120),foto:okFoto(o.foto)}}catch(e){}return null}
+let U=lastUser(),ready=!U,net="ok",sb=null,auth="wait",authMsg="",loginErr=false,flushing=null,busy=false,lastPull=0,tt;
+const KEY=()=>U?"pratocheio:"+U.id:"pratocheio";
+function load(){const r=lsGet(KEY());if(r)try{const o=JSON.parse(r),d=def();return{...d,...o,p:{...d.p,...o.p}}}catch(e){}return def()}
+function save(){lsSet(KEY(),JSON.stringify(S))}
 let S=load();
-function load(){try{const r=localStorage.getItem("pratocheio");if(r){const o=JSON.parse(r),d=def();return{...d,...o,p:{...d.p,...o.p}}}}catch(e){}return def()}
-function save(){try{localStorage.setItem("pratocheio",JSON.stringify(S))}catch(e){}}
+/* Conversão estado (S) <-> linhas do banco */
+const rowEntry=(m,day,e)=>({id:e.id,user_id:U.id,day,meal:m,name:txt(e.n,120)||"Alimento",grams:cl(e.g,.01,100000,1),qty_label:txt(e.q,80),kcal:cl(e.k,0,1e6,0),carbs:cl(e.c,0,1e6,0),protein:cl(e.p,0,1e6,0),fat:cl(e.f,0,1e6,0)});
+const rowCustom=f=>{const u=Array.isArray(f.u)?f.u:[];return{id:f.id,user_id:U.id,name:txt(f.n,120)||"Alimento",kcal:cl(f.k,0,20000,0),carbs:cl(f.c,0,1000,0),protein:cl(f.p,0,1000,0),fat:cl(f.f,0,1000,0),unit_singular:txt(u[0],40)||"unidade",unit_plural:txt(u[1],40)||"unidades",unit_grams:cl(u[2],.01,100000,100)}};
+const rowProfile=p=>({user_id:U.id,sex:p.sex==="m"?"m":"f",age:Math.round(cl(p.age,1,120,30)),height_cm:cl(p.h,50,300,165),weight_kg:cl(p.w,10,500,70),target_weight_kg:cl(p.tw,10,500,65),activity:cl(p.act,1,3,1.375),goal:["lose","keep","gain"].includes(p.goal)?p.goal:"lose",kcal_goal:Math.round(cl(p.kcal,500,10000,1800)),water_goal_ml:Math.round(cl(p.wg,0,20000,2000)),updated_at:new Date().toISOString()});
+const byDate=(a,b)=>a.created_at<b.created_at?-1:a.created_at>b.created_at?1:0;
+function fromDB(pf,en,wa,we,cf){
+  const s=def();
+  if(pf)s.p={sex:pf.sex,age:+pf.age,h:+pf.height_cm,w:+pf.weight_kg,tw:+pf.target_weight_kg,act:+pf.activity,goal:pf.goal,kcal:+pf.kcal_goal,wg:+pf.water_goal_ml};
+  [...en].sort(byDate).forEach(r=>{(s.log[r.day]||(s.log[r.day]={cafe:[],almoco:[],jantar:[],lanche:[]}))[r.meal].push({id:r.id,n:r.name,g:+r.grams,q:r.qty_label||"",k:+r.kcal,c:+r.carbs,p:+r.protein,f:+r.fat})});
+  wa.forEach(r=>{s.water[r.day]=+r.ml});we.forEach(r=>{s.weights[r.day]=+r.kg});
+  s.custom=[...cf].sort((a,b)=>-byDate(a,b)).map(r=>({id:r.id,n:r.name,k:+r.kcal,c:+r.carbs,p:+r.protein,f:+r.fat,u:[r.unit_singular,r.unit_plural,+r.unit_grams]}));
+  return s;
+}
+/* Fila de gravações pendentes (idempotentes: upsert por id ou por dia) */
+const readQ=o=>{o=o||(U&&U.id);if(!o)return[];try{const a=JSON.parse(lsGet("pratocheio:fila:"+o));return Array.isArray(a)?a:[]}catch(e){return[]}};
+const writeQ=(q,o)=>{o=o||(U&&U.id);if(!o)return;q.length?lsSet("pratocheio:fila:"+o,JSON.stringify(q)):lsDel("pratocheio:fila:"+o)};
+const transient=r=>!r.status||r.status===401||r.status===408||r.status===429||r.status>=500;
+function statusText(){
+  if(!ready)return"Verificando conta…";
+  const n=readQ().length,p=n?n+(n===1?" alteração pendente":" alterações pendentes"):"";
+  if(net==="off")return p?p+" · Sem conexão":"Sem conexão";
+  return p||"Sincronizado";
+}
+function paintNet(){const el=$("#sync");if(el)el.textContent=statusText()}
+function toast(m){const t=$("#toast");if(!t)return;t.textContent=m;t.hidden=false;clearTimeout(tt);tt=setTimeout(()=>{t.hidden=true},6000)}
+function softRender(){const a=document.activeElement;if(a&&a.matches&&a.matches("#app input,#app select"))return;render()}
+/* Registra uma alteração: sempre salva localmente; com conta, também enfileira e envia ao banco. */
+function commit(t,fn){
+  save();if(!U)return;
+  const d=fn();if(!d)return;
+  let q=readQ();
+  if(t==="data.reset")q=[];
+  else if((t==="water.set"||t==="weight.set"||t==="profile.set")&&!Array.isArray(d))q=q.filter(o=>!(o.t===t&&!Array.isArray(o.d)&&o.d.day===d.day));
+  q.push({i:uid(),t,d});writeQ(q);paintNet();flush();
+}
+function run(o){
+  const d=o.d,T=n=>sb.from(n);
+  switch(o.t){
+    case"entry.add":return T("food_entries").upsert(d,{onConflict:"id"});
+    case"entry.del":return T("food_entries").delete().eq("id",d.id);
+    case"water.set":return T("water_logs").upsert(d,{onConflict:"user_id,day"});
+    case"weight.set":return T("weight_logs").upsert(d,{onConflict:"user_id,day"});
+    case"profile.set":return T("profiles").upsert(d,{onConflict:"user_id"});
+    case"food.add":return T("custom_foods").upsert(d,{onConflict:"id"});
+    case"data.reset":return wipe(d.user_id);
+  }
+  return Promise.resolve({});
+}
+async function wipe(u){for(const n of["food_entries","water_logs","weight_logs","custom_foods","profiles"]){const r=await sb.from(n).delete().eq("user_id",u);if(r.error)return r}return{}}
+async function flush(){
+  if(!U||!sb)return false;
+  if(flushing)return flushing;
+  const me=U.id;
+  flushing=(async()=>{
+    let ok=false;
+    try{
+      const{data}=await sb.auth.getSession();
+      if(!data.session||data.session.user.id!==me){net="off";return false}
+      for(let o;(o=readQ(me)[0]);){
+        if(!U||U.id!==me)return false;
+        let r;try{r=await run(o)}catch(e){r={error:e,status:0}}
+        if(r&&r.error){
+          if(transient(r)){net="off";return false}
+          console.warn("Alteração descartada pelo banco:",o.t,r.error.message);
+          toast("Uma alteração não pôde ser salva na nuvem e foi descartada.");
+        }
+        writeQ(readQ(me).filter(x=>x.i!==o.i),me);paintNet();
+      }
+      net="ok";ok=true;return true;
+    }catch(e){net="off";return false}
+    finally{flushing=null;paintNet();if(ok&&U&&U.id===me&&readQ(me).length)flush()}
+  })();
+  return flushing;
+}
+/* Leitura completa do banco (páginas de 1000 linhas) */
+async function pull(){
+  try{
+    const rd=async(tab,ord)=>{const out=[];for(let f=0;;f+=1000){const{data,error}=await sb.from(tab).select("*").order(ord).range(f,f+999);if(error)throw error;out.push(...data);if(data.length<1000)return out}};
+    const[pf,en,wa,we,cf]=await Promise.all([rd("profiles","user_id"),rd("food_entries","id"),rd("water_logs","day"),rd("weight_logs","day"),rd("custom_foods","id")]);
+    return{s:fromDB(pf[0],en,wa,we,cf),vazio:!pf.length&&!en.length&&!wa.length&&!we.length&&!cf.length};
+  }catch(e){net="off";paintNet();return null}
+}
+async function syncAll(){
+  if(!U||!sb||busy)return;
+  busy=true;const me=U.id;
+  try{
+    if(!await flush()&&readQ(me).length)return;
+    const d=await pull();
+    if(!d||!U||U.id!==me||readQ(me).length)return;
+    lastPull=Date.now();net="ok";
+    const RK="pratocheio:recusou:"+me;
+    if(d.vazio&&!lsGet(RK)){
+      const g=guestData();
+      if(g){
+        if(confirm("Enviar os dados deste navegador (modo visitante) para a sua conta? Os dados do visitante continuam neste navegador.")){importar(g);return}
+        lsSet(RK,"1");
+      }
+    }
+    S=d.s;save();paintNet();softRender();
+  }finally{busy=false}
+}
+/* Importação dos dados do visitante (entrada não confiável: tudo é validado e limitado) */
+function guestData(){
+  try{
+    const o=JSON.parse(lsGet("pratocheio"));if(!o||typeof o!=="object")return null;
+    const d=def().p,temLog=Object.values(o.log&&typeof o.log==="object"?o.log:{}).some(x=>x&&typeof x==="object"&&Object.values(x).some(a=>Array.isArray(a)&&a.length));
+    const temP=o.p&&typeof o.p==="object"&&Object.keys(d).some(k=>o.p[k]!==undefined&&o.p[k]!==d[k]);
+    const tem=temLog||temP||Object.keys(o.water||{}).length||Object.keys(o.weights||{}).length||(Array.isArray(o.custom)&&o.custom.length);
+    return tem?o:null;
+  }catch(e){return null}
+}
+function importar(o){
+  const P={...def().p,...(o.p&&typeof o.p==="object"?o.p:{})},R={en:[],wa:[],we:[],cf:[]},t0=Date.now();
+  const L=o.log&&typeof o.log==="object"?o.log:{};
+  for(const day in L){
+    if(!DAY.test(day)||!L[day]||typeof L[day]!=="object")continue;
+    for(const[m]of MEALS){const a=L[day][m];if(Array.isArray(a))a.forEach(e=>{if(e&&typeof e==="object")R.en.push({...rowEntry(m,day,{...e,id:uid()}),created_at:new Date(t0+R.en.length).toISOString()})})}
+  }
+  const W=o.water&&typeof o.water==="object"?o.water:{},H=o.weights&&typeof o.weights==="object"?o.weights:{};
+  for(const day in W)if(DAY.test(day))R.wa.push({user_id:U.id,day,ml:Math.round(cl(W[day],0,20000,0))});
+  for(const day in H)if(DAY.test(day)&&+H[day]>0)R.we.push({user_id:U.id,day,kg:cl(H[day],10,500,70)});
+  (Array.isArray(o.custom)?o.custom:[]).forEach((f,i)=>{if(f&&typeof f==="object")R.cf.push({...rowCustom({...f,id:uid()}),created_at:new Date(t0-i).toISOString()})});
+  const pf=rowProfile(P),ops=[{i:uid(),t:"profile.set",d:pf}],chunk=(t,a)=>{for(let i=0;i<a.length;i+=200)ops.push({i:uid(),t,d:a.slice(i,i+200)})};
+  chunk("food.add",R.cf);chunk("entry.add",R.en);chunk("water.set",R.wa);chunk("weight.set",R.we);
+  S=fromDB(pf,R.en,R.wa,R.we,R.cf);
+  writeQ(readQ().concat(ops));save();render();flush();
+  toast("Dados enviados para a sua conta.");
+}
+/* Autenticação */
+function authOff(m){auth="off";authMsg=m;if(U)net="off";ready=true;render()}
+function initAuth(){
+  if(sb)return;
+  if(!SUPABASE_URL||!SUPABASE_KEY)return authOff("Configuração do Supabase ausente.");
+  if(location.protocol==="file:")return authOff("Abra o app por http://localhost ou por um endereço hospedado para entrar com o Google.");
+  if(!window.supabase)return authOff("");
+  try{
+    sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{flowType:"pkce",persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
+    auth="on";
+    sb.auth.onAuthStateChange((ev,ses)=>{setTimeout(()=>onSession(ev,ses),0)});
+  }catch(e){sb=null;authOff("")}
+}
+function onSession(ev,ses){
+  if(ev==="SIGNED_OUT"){leave();return}
+  if(ses&&ses.user&&["INITIAL_SESSION","SIGNED_IN","TOKEN_REFRESHED","USER_UPDATED"].includes(ev))enter(ses.user,ev);
+  else if(ev==="INITIAL_SESSION")leave();
+}
+async function enter(user,ev){
+  if(!UUID.test(user.id||""))return;
+  if(U&&U.id===user.id.toLowerCase()&&ready&&ev!=="INITIAL_SESSION"){flush();return}
+  const m=user.user_metadata||{},mudou=!U||U.id!==user.id.toLowerCase();
+  U={id:user.id.toLowerCase(),nome:txt(m.full_name||m.name||String(user.email||"").split("@")[0],80),email:txt(user.email,120),foto:okFoto(m.avatar_url||m.picture)};
+  lsSet("pratocheio:ultimo",JSON.stringify(U));
+  if(mudou)S=load();
+  ready=true;net="ok";render();
+  await syncAll();
+}
+function leave(){const era=!!U;U=null;lsDel("pratocheio:ultimo");ready=true;if(era)S=load();render()}
+async function login(){
+  if(!sb)return;
+  try{const{error}=await sb.auth.signInWithOAuth({provider:"google",options:{redirectTo:location.origin+location.pathname}});if(error)throw error}
+  catch(e){toast("Não foi possível entrar com o Google. Tente novamente.")}
+}
+async function logout(){if(!sb)return;try{await sb.auth.signOut({scope:"local"})}catch(e){}if(U)leave()}
+function resetAll(){S=def();commit("data.reset",()=>({user_id:U.id}))}
+(function(){const q=new URLSearchParams(location.search),h=new URLSearchParams(location.hash.slice(1));if(q.get("error")||h.get("error")){loginErr=true;history.replaceState(null,"",location.pathname)}})();
 let cur=new Date(),view="diario",sh=null;
 const day=k=>S.log[k]||(S.log[k]={cafe:[],almoco:[],jantar:[],lanche:[]});
 function tot(k){const t={k:0,c:0,p:0,f:0},d=S.log[k];if(d)for(const m in d)d[m].forEach(e=>{t.k+=e.k;t.c+=e.c;t.p+=e.p;t.f+=e.f});return t}
@@ -156,7 +348,7 @@ function progress(){
 }
 function profile(){
   const P=S.p,o=(v,l,c)=>`<option value="${v}" ${String(c)===String(v)?"selected":""}>${l}</option>`;
-  return`<div class="top"><h1>Perfil e metas</h1></div><div class="card">
+  return`<div class="top"><h1>Perfil e metas</h1></div>${accountCard()}<div class="card">
   <div class="grid2"><div><label>Sexo</label><select id="pf_sex">${o("f","Feminino",P.sex)}${o("m","Masculino",P.sex)}</select></div><div><label>Idade</label><input id="pf_age" type="number" value="${P.age}"></div>
   <div><label>Altura (cm)</label><input id="pf_h" type="number" value="${P.h}"></div><div><label>Peso atual (kg)</label><input id="pf_w" type="number" step="0.1" value="${P.w}"></div>
   <div><label>Peso meta (kg)</label><input id="pf_tw" type="number" step="0.1" value="${P.tw}"></div><div><label>Água por dia (ml)</label><input id="pf_wg" type="number" step="250" value="${P.wg}"></div></div>
@@ -165,7 +357,20 @@ function profile(){
   <div class="field"><label>Meta diária de calorias (kcal)</label><input id="pf_kcal" type="number" value="${P.kcal}"></div>
   <button class="btn sec" data-a="calc" style="margin-bottom:10px">Calcular meta sugerida</button><button class="btn" data-a="savep">Salvar perfil</button>
   <p class="note">A sugestão usa a fórmula de Mifflin-St Jeor, com 500 kcal a menos para perder peso e 300 a mais para ganhar massa. Os macros seguem a divisão 45% carboidratos, 25% proteínas e 30% gorduras. Para metas clínicas, consulte um nutricionista.</p></div>
-  <div class="card"><h2>Dados</h2><p class="note" style="margin:0 0 12px">Tudo fica salvo apenas neste navegador.</p><button class="btn dng" data-a="reset">Apagar todos os dados</button></div>`;
+  <div class="card"><h2>Dados</h2><p class="note" style="margin:0 0 12px">${U?"Seus dados ficam salvos na sua conta e também neste navegador, para uso sem internet.":"Modo visitante: tudo fica salvo apenas neste navegador."}</p><button class="btn dng" data-a="reset">Apagar todos os dados</button></div>
+  <p class="ver">EmagrecAI v${VERSAO}</p>`;
+}
+const GLOGO='<svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.5 5.4 2.6 13.2l7.9 6.1C12.4 13.6 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.6 3-2.3 5.5-4.8 7.2l7.5 5.8c4.4-4.1 7.1-10.1 7.1-17.5z"/><path fill="#FBBC05" d="M10.5 28.7c-.5-1.5-.8-3-.8-4.7s.3-3.2.8-4.7l-7.9-6.1C1 16.4 0 20.1 0 24s1 7.6 2.6 10.8l7.9-6.1z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.5-5.8c-2.1 1.4-4.8 2.3-8.4 2.3-6.3 0-11.6-4.1-13.5-9.8l-7.9 6.1C6.5 42.6 14.6 48 24 48z"/></svg>';
+function accountCard(){
+  if(U){
+    const ini=U.nome.split(/\s+/).filter(Boolean).slice(0,2).map(w=>w[0]).join("").toUpperCase()||"?";
+    const av=U.foto?`<img class="av" src="${esc(U.foto)}" alt="" referrerpolicy="no-referrer">`:`<div class="av" aria-hidden="true">${esc(ini)}</div>`;
+    return`<div class="card"><h2>Conta</h2><div class="acc">${av}<div><b>${esc(U.nome)}</b><p class="note" style="margin:0">${esc(U.email)}</p></div></div><p class="note" id="sync" style="margin:0 0 12px">${esc(statusText())}</p><button class="btn sec" data-a="logout">Sair</button></div>`;
+  }
+  const body=auth==="on"?`<p class="note" style="margin:0 0 12px">Entre para sincronizar seus dados entre dispositivos. Sem login, tudo fica salvo apenas neste navegador.</p><button class="btn gbtn" data-a="login">${GLOGO}Entrar com Google</button>`
+    :auth==="off"?`<p class="note" style="margin:0">Login indisponível.${authMsg?" "+esc(authMsg):""} O app continua funcionando em modo visitante.</p>`
+    :`<p class="note" style="margin:0">Carregando o login…</p>`;
+  return`<div class="card"><h2>Conta</h2>${body}</div>`;
 }
 function readP(){const v=id=>$("#pf_"+id).value;return{sex:v("sex"),age:+v("age")||30,h:+v("h")||165,w:+v("w")||70,tw:+v("tw")||65,wg:+v("wg")||2000,act:+v("act"),goal:v("goal"),kcal:+v("kcal")||1800}}
 function suggest(p){const b=10*p.w+6.25*p.h-5*p.age+(p.sex==="m"?5:-161),t=b*p.act+(p.goal==="lose"?-500:p.goal==="gain"?300:0);return Math.max(1200,Math.round(t/10)*10)}
@@ -197,17 +402,23 @@ document.addEventListener("click",e=>{
   else if(a==="tab"){sh.tab=t.dataset.t;drawSheet()}
   else if(a==="back"){sh.food=null;drawSheet()}
   else if(a==="pick"){sh.food=window._r[+t.dataset.i];drawSheet()}
-  else if(a==="addfood"){const f=sh.food,u=ud(f),qv=+$("#gr").value,g=grams();if(!(g>0)){$("#gr").focus();return}const r=g/100;day(k)[sh.m].push({n:f.n,g,q:$("#un").value==="u"?qs(qv,u):"",k:f.k*r,c:f.c*r,p:f.p*r,f:f.f*r});save();closeSheet();render()}
-  else if(a==="newfood"){const n=$("#nf_n").value.trim(),v=id=>+$("#nf_"+id).value||0;if(!n){$("#nf_n").focus();return}const un=$("#nf_u").value.trim()||"unidade",f={n,k:v("k"),c:v("c"),p:v("p"),f:v("f"),u:[un,un==="unidade"?"unidades":un,v("ug")||100]};S.custom.unshift(f);save();sh.food=f;drawSheet()}
-  else if(a==="del"){day(k)[t.dataset.m].splice(+t.dataset.i,1);save();render()}
-  else if(a==="water"){S.water[k]=Math.max(0,(S.water[k]||0)+ +t.dataset.d);save();render()}
-  else if(a==="savew"){const v=parseFloat($("#wt").value);if(v>0){S.weights[key(new Date())]=v;S.p.w=v;save();render()}}
+  else if(a==="addfood"){const f=sh.food,u=ud(f),qv=+$("#gr").value,g=grams();if(!(g>0)){$("#gr").focus();return}const r=g/100,m=sh.m,e={id:uid(),n:f.n,g,q:$("#un").value==="u"?qs(qv,u):"",k:f.k*r,c:f.c*r,p:f.p*r,f:f.f*r};day(k)[m].push(e);commit("entry.add",()=>rowEntry(m,k,e));closeSheet();render()}
+  else if(a==="newfood"){const n=$("#nf_n").value.trim(),v=id=>+$("#nf_"+id).value||0;if(!n){$("#nf_n").focus();return}const un=$("#nf_u").value.trim()||"unidade",f={id:uid(),n,k:v("k"),c:v("c"),p:v("p"),f:v("f"),u:[un,un==="unidade"?"unidades":un,v("ug")||100]};S.custom.unshift(f);commit("food.add",()=>rowCustom(f));sh.food=f;drawSheet()}
+  else if(a==="del"){const e=day(k)[t.dataset.m].splice(+t.dataset.i,1)[0];commit("entry.del",()=>e&&e.id?{id:e.id}:null);render()}
+  else if(a==="water"){S.water[k]=Math.max(0,(S.water[k]||0)+ +t.dataset.d);commit("water.set",()=>({user_id:U.id,day:k,ml:Math.round(cl(S.water[k],0,20000,0))}));render()}
+  else if(a==="savew"){const v=parseFloat($("#wt").value);if(v>0){const dk=key(new Date());S.weights[dk]=v;S.p.w=v;commit("weight.set",()=>({user_id:U.id,day:dk,kg:cl(v,10,500,70)}));commit("profile.set",()=>rowProfile(S.p));render()}}
   else if(a==="calc"){$("#pf_kcal").value=suggest(readP())}
-  else if(a==="savep"){S.p=readP();save();view="diario";render()}
-  else if(a==="reset"){if(confirm("Apagar todos os registros e metas deste navegador?")){S=def();save();render()}}
+  else if(a==="savep"){S.p=readP();commit("profile.set",()=>rowProfile(S.p));view="diario";render()}
+  else if(a==="login")login();
+  else if(a==="logout")logout();
+  else if(a==="reset"){if(confirm(U?"Apagar todos os registros e metas da sua conta? Os dados do modo visitante deste navegador não serão apagados.":"Apagar todos os registros e metas do modo visitante deste navegador? Os dados das contas não serão apagados.")){resetAll();render()}}
 });
+addEventListener("online",()=>{if(U&&sb&&ready)syncAll()});
+document.addEventListener("visibilitychange",()=>{if(!document.hidden&&U&&sb&&ready&&Date.now()-lastPull>30000)syncAll()});
 document.addEventListener("keydown",e=>{if(e.key==="Escape"&&sh)closeSheet()});
 render();
+if(loginErr)toast("Não foi possível entrar com o Google. Tente novamente.");
 </script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.0/dist/umd/supabase.js" integrity="sha384-uteMfOloLDGt042uDz+xHGF3ym63/WQ6rFq7murQRG8Ih7QrXGEGNtWd8688sb4O" crossorigin="anonymous" async onload="initAuth()" onerror="authOff('')"></script>
 </body>
 </html>

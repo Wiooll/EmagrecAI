@@ -9,7 +9,7 @@ Quem usa o diário esquece de registrar refeições e de se pesar. O app não te
 - Botão "Adicionar ao calendário", que gera no aparelho um arquivo `.ics` com eventos recorrentes e alarme, e o entrega ao sistema (compartilhamento do arquivo quando disponível, download como alternativa).
 - Aviso na aba Hoje quando uma refeição já passou do horário e não tem registro no dia, ou quando é o dia da pesagem e não há peso registrado. Mostra só o aviso mais recente. O usuário pode dispensá-lo, por refeição e por dia.
 - Horários e dispensas ficam em `localStorage`. Nada é enviado ao Supabase, e o modo visitante funciona igual.
-- Versão do app passa de 1.4.0 para 1.5.0.
+- Versão do app passa de 1.5.0 para 1.6.0.
 
 Fora do escopo: push com servidor, aviso de água dentro do app, sincronização dos horários entre aparelhos.
 
@@ -25,6 +25,6 @@ Fora do escopo: push com servidor, aviso de água dentro do app, sincronização
 
 - `index.html`: card "Lembretes" no Perfil, banner na aba Hoje, leitura e validação do `localStorage`, geração do `.ics`, constante `VERSAO` e hash SHA-256 da CSP.
 - `sw.js`: constante `VERSAO`. Nenhum arquivo novo precisa entrar em `ARQUIVOS`, porque o `.ics` é gerado no aparelho.
-- `README.md`: funcionalidade "Novo na 1.5.0", versão atual, histórico de versões e nota de privacidade (os horários ficam só no aparelho).
+- `README.md`: funcionalidade "Novo na 1.6.0", versão atual, histórico de versões e nota de privacidade (os horários ficam só no aparelho).
 - Sem mudança no Supabase, nas migrações ou na Content-Security-Policy (além do hash do script).
 - Risco conhecido: alarmes de arquivos `.ics` variam entre aplicativos de calendário, e reimportar depois de mudar um horário pode duplicar eventos. A tela deve avisar o usuário.

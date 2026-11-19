@@ -11,7 +11,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="EmagrecAI">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-nXMERwA45EFIFYbRLX1XYw9mK8h7IFQkSTzHls66DzM=' https://cdn.jsdelivr.net; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://*.googleusercontent.com; connect-src https://sclzuaoqxjstanugvyyq.supabase.co; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-u1nMmtf04A0lO3rkCzVNrtXD4180c5xDKRduPRzgIS0=' https://cdn.jsdelivr.net; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://*.googleusercontent.com; connect-src https://sclzuaoqxjstanugvyyq.supabase.co; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
 <title>EmagrecAI – Diário nutricional</title>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
@@ -112,6 +112,13 @@ svg text{fill:var(--mut);font-size:10px;font-family:inherit}
 #upd{position:fixed;left:50%;transform:translateX(-50%);top:calc(8px + env(safe-area-inset-top,0px));background:var(--ink);color:var(--bg);padding:4px 4px 4px 14px;border-radius:14px;font-size:13px;z-index:30;max-width:94%;display:flex;align-items:center;gap:10px}
 #upd[hidden]{display:none}
 #upd button{background:var(--g);color:#fff;border-radius:10px;min-height:var(--tap);padding:0 14px;font-weight:700;flex:none}
+.btn:disabled{opacity:.5;cursor:default}
+.chk{display:flex;align-items:center;gap:10px;color:var(--ink);font-size:15px;margin-bottom:0}
+.chk input{width:22px;height:22px;padding:0;flex:none}
+.aviso{display:flex;align-items:center;justify-content:space-between;gap:10px;border-color:var(--c)}
+.aviso p{margin:0;font-weight:600}
+.aviso>div{display:flex;align-items:center;gap:4px;flex:none}
+.aviso .btn{width:auto;padding:8px 14px}
 @media (max-width:359px){
 #app{padding-left:12px;padding-right:12px}
 .hero{gap:12px}
@@ -153,7 +160,7 @@ const def=()=>({p:{sex:"f",age:30,h:165,w:70,tw:65,act:1.375,goal:"lose",kcal:18
    A chave publicável é pública por natureza; a proteção dos dados é feita por RLS no banco. */
 const SUPABASE_URL="https://sclzuaoqxjstanugvyyq.supabase.co";
 const SUPABASE_KEY="sb_publishable_slijF86mJygHkuv2qnsY-g_RawQNbii";
-const VERSAO="1.5.0";
+const VERSAO="1.6.0";
 const lsGet=k=>{try{return localStorage.getItem(k)}catch(e){return null}};
 const lsSet=(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}};
 const lsDel=k=>{try{localStorage.removeItem(k)}catch(e){}};
@@ -355,13 +362,102 @@ function render(){
   $("#nav").innerHTML=Object.keys(LBL).map(v=>`<button data-a="view" data-v="${v}" class="${v===view?"on":""}" aria-label="${LBL[v]}"><svg viewBox="0 0 24 24">${ICONS[v]}</svg>${LBL[v]}</button>`).join("");
   $("#app").innerHTML=view==="diario"?diary():view==="progresso"?progress():profile();
 }
+/* ===== Lembretes: horários, aviso na aba Diário e arquivo .ics =====
+   Tudo fica neste aparelho (localStorage). Nada é enviado ao Supabase, e o modo visitante funciona igual. */
+const LEMB_KEY="pratocheio:lembretes",AVISO_KEY="pratocheio:avisos",HORA=/^([01]\d|2[0-3]):[0-5]\d$/;
+const LEMB_PAD={cafe:"07:30",almoco:"12:00",lanche:"16:00",jantar:"19:30",pesagem:{dia:1,hora:"07:00"},agua:{ativo:false,ini:"08:00",fim:"20:00",passo:2}};
+const LEMB_REF=[["cafe","Café da manhã","o café da manhã"],["almoco","Almoço","o almoço"],["lanche","Lanche","o lanche"],["jantar","Jantar","o jantar"]];
+const DIAS_SEM=["domingo","segunda-feira","terça-feira","quarta-feira","quinta-feira","sexta-feira","sábado"],DIAS_ICS=["SU","MO","TU","WE","TH","FR","SA"];
+const minutos=h=>+h.slice(0,2)*60+ +h.slice(3);
+/* Valida cada campo; o que estiver inválido ou ausente assume o valor de b. */
+function lembSan(o,b){
+  o=o&&typeof o==="object"?o:{};
+  const pe=o.pesagem&&typeof o.pesagem==="object"?o.pesagem:{},ag=o.agua&&typeof o.agua==="object"?o.agua:{};
+  const h=(v,d)=>typeof v==="string"&&HORA.test(v)?v:d;
+  return{cafe:h(o.cafe,b.cafe),almoco:h(o.almoco,b.almoco),lanche:h(o.lanche,b.lanche),jantar:h(o.jantar,b.jantar),
+    pesagem:{dia:Number.isInteger(pe.dia)&&pe.dia>=0&&pe.dia<=6?pe.dia:b.pesagem.dia,hora:h(pe.hora,b.pesagem.hora)},
+    agua:{ativo:ag.ativo===true,ini:h(ag.ini,b.agua.ini),fim:h(ag.fim,b.agua.fim),passo:[1,2,3].includes(ag.passo)?ag.passo:b.agua.passo}};
+}
+function lembLer(){let o=null;try{o=JSON.parse(lsGet(LEMB_KEY))}catch(e){}return lembSan(o,LEMB_PAD)}
+let LEMB=lembLer();
+function lembSalvar(l){LEMB=l;lsSet(LEMB_KEY,JSON.stringify(l))}
+const lembInvalida=l=>l.agua.ativo&&minutos(l.agua.fim)<=minutos(l.agua.ini);
+function lembCard(){
+  const L=LEMB,a=L.agua,inv=lembInvalida(L),dis=a.ativo?"":"disabled";
+  const hr=(id,l,v,x)=>`<div><label for="lb_${id}">${l}</label><input id="lb_${id}" data-lb="1" type="time" value="${v}" ${x||""}></div>`;
+  const o=(v,l,c)=>`<option value="${v}" ${String(c)===String(v)?"selected":""}>${l}</option>`;
+  return`<div class="card" id="lemb"><h2>Lembretes</h2>
+  <p class="note" style="margin:0 0 12px">Escolha os horários e adicione os lembretes ao calendário do aparelho. Na aba Diário, o app também avisa quando uma refeição ou a pesagem estiver pendente. Os horários ficam salvos só neste aparelho.</p>
+  <div class="grid2">${LEMB_REF.map(r=>hr(r[0],r[1],L[r[0]])).join("")}</div>
+  <div class="grid2"><div><label for="lb_pdia">Pesagem semanal</label><select id="lb_pdia" data-lb="1">${DIAS_SEM.map((n,i)=>o(i,n,L.pesagem.dia)).join("")}</select></div>${hr("phora","Horário da pesagem",L.pesagem.hora)}</div>
+  <label class="chk" for="lb_aon"><input id="lb_aon" data-lb="1" type="checkbox" ${a.ativo?"checked":""}>Lembrar de beber água</label>
+  <p class="note" style="margin:4px 0 12px">Cria um evento no calendário para cada horário, o que enche a agenda.</p>
+  <div class="grid2">${hr("aini","Água: início",a.ini,dis)}${hr("afim","Água: fim",a.fim,dis)}</div>
+  <div class="field"><label for="lb_apasso">Intervalo da água</label><select id="lb_apasso" data-lb="1" ${dis}>${o(1,"A cada 1 hora",a.passo)}${o(2,"A cada 2 horas",a.passo)}${o(3,"A cada 3 horas",a.passo)}</select></div>
+  <p class="note" id="lb_err" style="color:var(--f)" ${inv?"":"hidden"}>O horário final da água precisa ser depois do inicial.</p>
+  <button class="btn" id="lb_ics" data-a="lembics" ${inv?"disabled":""}>Adicionar ao calendário</button>
+  <button class="btn sec" data-a="lembpad" style="margin-top:10px">Restaurar padrões</button>
+  <p class="note">Ao mudar um horário, apague os lembretes antigos do calendário antes de importar de novo, para não ficar com eventos repetidos. O alarme depende das notificações do seu aplicativo de calendário.</p></div>`;
+}
+/* Lê os campos do card e grava. Campo vazio ou inválido volta ao valor anterior. */
+function lembAlterar(){
+  const v=x=>{const el=$("#lb_"+x);return el?el.value:undefined};
+  const L=lembSan({cafe:v("cafe"),almoco:v("almoco"),lanche:v("lanche"),jantar:v("jantar"),pesagem:{dia:+v("pdia"),hora:v("phora")},agua:{ativo:$("#lb_aon").checked,ini:v("aini"),fim:v("afim"),passo:+v("apasso")}},LEMB);
+  lembSalvar(L);
+  [["cafe",L.cafe],["almoco",L.almoco],["lanche",L.lanche],["jantar",L.jantar],["phora",L.pesagem.hora],["aini",L.agua.ini],["afim",L.agua.fim]].forEach(([x,val])=>{const el=$("#lb_"+x);if(el&&el.value!==val)el.value=val});
+  ["aini","afim","apasso"].forEach(x=>{const el=$("#lb_"+x);if(el)el.disabled=!L.agua.ativo});
+  $("#lb_err").hidden=!lembInvalida(L);$("#lb_ics").disabled=lembInvalida(L);
+}
+function lembRestaurar(){lembSalvar(lembSan({},LEMB_PAD));const el=$("#lemb");if(el)el.outerHTML=lembCard()}
+/* Arquivo de calendário: eventos recorrentes, sem fuso (12:00 é 12:00 onde a pessoa estiver). Todas as linhas são curtas, sem dobra. */
+function icsTexto(L){
+  const agora=new Date(),stamp=agora.toISOString().replace(/[-:]|\.\d{3}/g,""),seq=Math.floor(agora.getTime()/60000);
+  const ev=(id,resumo,desc,hora,data,regra)=>["BEGIN:VEVENT","UID:emagrecai-"+id+"@emagrecai","DTSTAMP:"+stamp,"SEQUENCE:"+seq,"DTSTART:"+data+"T"+hora.replace(":","")+"00","DURATION:PT15M","RRULE:"+regra,"SUMMARY:"+resumo,"DESCRIPTION:"+desc,"BEGIN:VALARM","ACTION:DISPLAY","DESCRIPTION:"+resumo,"TRIGGER:PT0S","END:VALARM","END:VEVENT"];
+  const hoje=key(agora).replace(/-/g,""),L2=[];
+  LEMB_REF.forEach(r=>L2.push(...ev(r[0],"Registrar "+r[2]+" no EmagrecAI","Abra o EmagrecAI e registre o que você comeu.",L[r[0]],hoje,"FREQ=DAILY")));
+  const d=new Date(agora);while(d.getDay()!==L.pesagem.dia)d.setDate(d.getDate()+1);
+  L2.push(...ev("pesagem","Hora de se pesar no EmagrecAI","Abra o EmagrecAI e registre o seu peso.",L.pesagem.hora,key(d).replace(/-/g,""),"FREQ=WEEKLY;BYDAY="+DIAS_ICS[L.pesagem.dia]));
+  if(L.agua.ativo&&!lembInvalida(L))for(let m=minutos(L.agua.ini),n=0;m<=minutos(L.agua.fim)&&n<24;m+=L.agua.passo*60,n++){
+    const h=pad(Math.floor(m/60))+":"+pad(m%60);
+    L2.push(...ev("agua-"+h.replace(":",""),"Beber água","Beba um copo de água e registre no EmagrecAI.",h,hoje,"FREQ=DAILY"));
+  }
+  return["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//EmagrecAI//Lembretes//PT-BR","CALSCALE:GREGORIAN",...L2,"END:VCALENDAR"].join("\r\n")+"\r\n";
+}
+async function lembExportar(){
+  if(lembInvalida(LEMB))return;
+  const txt=icsTexto(LEMB),nome="emagrecai-lembretes.ics";
+  try{
+    const f=new File([txt],nome,{type:"text/calendar"});
+    if(navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share({files:[f],title:"Lembretes do EmagrecAI"});return}
+  }catch(e){if(e&&e.name==="AbortError")return}
+  try{
+    const u=URL.createObjectURL(new Blob([txt],{type:"text/calendar"})),a=document.createElement("a");
+    a.href=u;a.download=nome;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),1000);
+    toast("Arquivo gerado. Abra-o para adicionar os lembretes ao calendário.");
+  }catch(e){toast("Não foi possível gerar o arquivo de lembretes.")}
+}
+/* Aviso de pendência: só para hoje; a dispensa vale por refeição (ou pesagem) e só no dia em que foi feita. */
+function avisosHoje(){let o=null;try{o=JSON.parse(lsGet(AVISO_KEY))}catch(e){}const l=o&&typeof o==="object"&&Array.isArray(o[key(new Date())])?o[key(new Date())]:[];return l.filter(x=>typeof x==="string")}
+function avisoDispensar(id){const l=avisosHoje();if(!l.includes(id))l.push(id);lsSet(AVISO_KEY,JSON.stringify({[key(new Date())]:l}))}
+function avisoPendente(){
+  const n=new Date(),k=key(n),agora=n.getHours()*60+n.getMinutes(),d=avisosHoje(),reg=S.log[k]||{},c=[];
+  LEMB_REF.forEach(r=>{const m=minutos(LEMB[r[0]]);if(m<=agora&&!(reg[r[0]]&&reg[r[0]].length)&&!d.includes(r[0]))c.push({id:r[0],m,t:"Você ainda não registrou "+r[2]+"."})});
+  const pe=LEMB.pesagem,mp=minutos(pe.hora);
+  if(n.getDay()===pe.dia&&mp<=agora&&!(S.weights[k]>0)&&!d.includes("pesagem"))c.push({id:"pesagem",m:mp,t:"Hoje é dia de pesagem. Registre o seu peso."});
+  c.sort((a,b)=>b.m-a.m);return c[0]||null;
+}
+function avisoHtml(){
+  if(key(cur)!==key(new Date()))return"";
+  const p=avisoPendente();if(!p)return"";
+  return`<div class="card aviso" role="status"><p>${esc(p.t)}</p><div><button class="btn" data-a="avisook" data-id="${p.id}">Registrar</button><button class="del" data-a="avisono" data-id="${p.id}" aria-label="Dispensar aviso">×</button></div></div>`;
+}
 function diary(){
   const k=key(cur),t=tot(k),P=S.p,g=P.kcal,rem=g-t.k,over=rem<0,R=54,C=2*Math.PI*R;
   const off=C*(1-Math.min(1,t.k/g)),gc=g*.45/4,gp=g*.25/4,gf=g*.3/9;
   const mac=(l,v,m,col)=>`<div class="mac"><small>${l}<span>${fmt(m)} g</span></small><div class="bar"><i style="width:${Math.min(100,v/m*100)}%;background:${col}"></i></div><b>${fmt(v)} g</b></div>`;
   const w=S.water[k]||0,n=Math.ceil(P.wg/250);
   let h=`<div class="top"><h1>EmagrecAI</h1><div class="dnav"><button data-a="day" data-d="-1" aria-label="Dia anterior">‹</button><span>${dlabel()}</span><button data-a="day" data-d="1" aria-label="Próximo dia">›</button></div></div>
-  <div class="card hero"><div class="ring"><svg width="150" height="150" viewBox="0 0 120 120"><circle cx="60" cy="60" r="${R}" fill="none" stroke="var(--ln)" stroke-width="11"/><circle cx="60" cy="60" r="${R}" fill="none" stroke="${over?"var(--f)":"var(--g)"}" stroke-width="11" stroke-linecap="round" stroke-dasharray="${C}" stroke-dashoffset="${off}" style="transition:stroke-dashoffset .5s"/></svg><div class="mid"><b>${fmt(Math.abs(rem))}</b><small>${over?"kcal acima":"kcal restantes"}</small></div></div>
+  ${avisoHtml()}<div class="card hero"><div class="ring"><svg width="150" height="150" viewBox="0 0 120 120"><circle cx="60" cy="60" r="${R}" fill="none" stroke="var(--ln)" stroke-width="11"/><circle cx="60" cy="60" r="${R}" fill="none" stroke="${over?"var(--f)":"var(--g)"}" stroke-width="11" stroke-linecap="round" stroke-dasharray="${C}" stroke-dashoffset="${off}" style="transition:stroke-dashoffset .5s"/></svg><div class="mid"><b>${fmt(Math.abs(rem))}</b><small>${over?"kcal acima":"kcal restantes"}</small></div></div>
   <div class="stats"><div><span>Meta</span><b>${fmt(g)}</b></div><div><span>Consumido</span><b>${fmt(t.k)}</b></div><div><span>Restante</span><b style="color:${over?"var(--f)":"inherit"}">${fmt(rem)}</b></div></div></div>
   <div class="card macros">${mac("Carboidratos",t.c,gc,"var(--c)")}${mac("Proteínas",t.p,gp,"var(--p)")}${mac("Gorduras",t.f,gf,"var(--f)")}</div>`;
   const d=S.log[k]||{};
@@ -462,7 +558,7 @@ function profile(){
   <div class="field"><label>Meta diária de calorias (kcal)</label><input id="pf_kcal" type="number" value="${P.kcal}"></div>
   <button class="btn sec" data-a="calc" style="margin-bottom:10px">Calcular meta sugerida</button><button class="btn" data-a="savep">Salvar perfil</button>
   <p class="note">A sugestão usa a fórmula de Mifflin-St Jeor, com 500 kcal a menos para perder peso e 300 a mais para ganhar massa. Os macros seguem a divisão 45% carboidratos, 25% proteínas e 30% gorduras. Para metas clínicas, consulte um nutricionista.</p></div>
-  <div class="card"><h2>Dados</h2><p class="note" style="margin:0 0 12px">${U?"Seus dados ficam salvos na sua conta e também neste navegador, para uso sem internet.":"Modo visitante: tudo fica salvo apenas neste navegador."}</p><button class="btn dng" data-a="reset">Apagar todos os dados</button></div>
+  ${lembCard()}<div class="card"><h2>Dados</h2><p class="note" style="margin:0 0 12px">${U?"Seus dados ficam salvos na sua conta e também neste navegador, para uso sem internet.":"Modo visitante: tudo fica salvo apenas neste navegador."}</p><button class="btn dng" data-a="reset">Apagar todos os dados</button></div>
   ${installCard()}<div class="card about"><h2>Sobre o app</h2>
   <p class="note" style="margin:0 0 12px">Quer colaborar com o desenvolvimento? A contribuição é voluntária e pode ser feita com código no GitHub ou com apoio via Pix.</p>
   <p class="lk"><label>GitHub</label><a href="${esc(GITHUB_URL)}" target="_blank" rel="noopener noreferrer">${esc(GITHUB_URL.replace("https://",""))}</a></p>
@@ -520,6 +616,10 @@ document.addEventListener("click",e=>{
   else if(a==="del"){const e=day(k)[t.dataset.m].splice(+t.dataset.i,1)[0];commit("entry.del",()=>e&&e.id?{id:e.id}:null);render()}
   else if(a==="water"){S.water[k]=Math.max(0,(S.water[k]||0)+ +t.dataset.d);commit("water.set",()=>({user_id:U.id,day:k,ml:Math.round(cl(S.water[k],0,20000,0))}));render()}
   else if(a==="savew"){const v=parseFloat($("#wt").value);if(v>0){const dk=key(new Date());S.weights[dk]=v;S.p.w=v;commit("weight.set",()=>({user_id:U.id,day:dk,kg:cl(v,10,500,70)}));commit("profile.set",()=>rowProfile(S.p));render()}}
+  else if(a==="lembics")lembExportar();
+  else if(a==="lembpad")lembRestaurar();
+  else if(a==="avisono"){if(t.dataset.id==="pesagem"||LEMB_REF.some(r=>r[0]===t.dataset.id)){avisoDispensar(t.dataset.id);render()}}
+  else if(a==="avisook"){const id=t.dataset.id;if(id==="pesagem"){view="progresso";render();scrollTo(0,0);const w=$("#wt");if(w)w.focus()}else if(LEMB_REF.some(r=>r[0]===id))openSheet(id)}
   else if(a==="calc"){$("#pf_kcal").value=suggest(readP())}
   else if(a==="savep"){S.p=readP();commit("profile.set",()=>rowProfile(S.p));view="diario";render()}
   else if(a==="login")login();
@@ -539,6 +639,7 @@ function copyPix(btn){
   else done(old()?"Chave copiada!":"Copie manualmente");
 }
 document.addEventListener("focusin",e=>{if(e.target.id==="pixkey")e.target.select()});
+document.addEventListener("change",e=>{if(e.target.dataset&&e.target.dataset.lb&&$("#lemb"))lembAlterar()});
 document.addEventListener("keydown",e=>{if(e.key==="Escape"&&sh)closeSheet()});
 /* ===== PWA: instalação, service worker e atualização =====
    O sw.js tem a própria constante VERSAO, que deve ser igual à deste arquivo. */

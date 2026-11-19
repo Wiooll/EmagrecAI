@@ -104,8 +104,8 @@ O app SHALL permitir dispensar o aviso. A dispensa SHALL valer apenas para aquel
 - **THEN** o app abre a folha de adicionar alimento daquela refeição
 
 ### Requirement: Versão e documentação
-O app SHALL exibir a versão 1.5.0 no rodapé do Perfil, com a mesma constante `VERSAO` no `index.html` e no `sw.js`. O README SHALL descrever a funcionalidade, informar que os horários ficam só no aparelho e registrar a versão no histórico.
+O app SHALL exibir a versão 1.6.0 no rodapé do Perfil, com a mesma constante `VERSAO` no `index.html` e no `sw.js`. O README SHALL descrever a funcionalidade, informar que os horários ficam só no aparelho e registrar a versão no histórico.
 
 #### Scenario: Versões iguais
 - **WHEN** a mudança é publicada
-- **THEN** a constante `VERSAO` do `index.html` é igual à do `sw.js` e o cache `emagrecai-1.5.0` é criado
+- **THEN** a constante `VERSAO` do `index.html` é igual à do `sw.js` e o cache `emagrecai-1.6.0` é criado

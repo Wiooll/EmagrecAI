@@ -37,8 +37,8 @@
 
 ## 6. Verificação
 
-- [ ] 6.1 Abrir o app em `http://localhost:8000` e confirmar que o console não mostra erros e que o cache `emagrecai-1.6.0` foi criado
-- [ ] 6.2 Conferir no navegador os cenários do aviso: pendente, registrada, horário futuro, várias pendências, pesagem, dia anterior e dispensa
+- [x] 6.1 Abrir o app em `http://localhost:8000` e confirmar que o console não mostra erros e que o cache `emagrecai-1.6.0` foi criado
+- [x] 6.2 Conferir no navegador os cenários do aviso: pendente, registrada, horário futuro, várias pendências, pesagem, dia anterior e dispensa
 - [x] 6.3 Conferir o `.ics` gerado: cinco eventos com os padrões, horários editados refletidos, `UID` iguais entre gerações e eventos de água só quando ligada
-- [ ] 6.4 Conferir o comportamento com valores inválidos no `localStorage` e em modo visitante
+- [x] 6.4 Conferir o comportamento com valores inválidos no `localStorage` e em modo visitante
 - [x] 6.5 Gerar o resumo das alterações para a descrição do commit, em português do Brasil

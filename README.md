@@ -2,7 +2,7 @@
 
 Diário alimentar simples para acompanhar calorias, macronutrientes, água e peso. Funciona em um único arquivo HTML, sem build. Com login Google, os dados ficam em um banco Supabase e sincronizam entre dispositivos.
 
-**Versão atual:** 1.5.0
+**Versão atual:** 1.6.0
 
 ## Funcionalidades
 

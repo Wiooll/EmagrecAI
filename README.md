@@ -2,7 +2,7 @@
 
 Diário alimentar simples para acompanhar calorias, macronutrientes, água e peso. Funciona em um único arquivo HTML, sem build. Com login Google, os dados ficam em um banco Supabase e sincronizam entre dispositivos.
 
-**Versão atual:** 1.4.0
+**Versão atual:** 1.5.0
 
 ## Funcionalidades
 
@@ -20,6 +20,7 @@ Diário alimentar simples para acompanhar calorias, macronutrientes, água e pes
 - **Novo na 1.2.1:** correções de segurança. Ao sair da conta, o cache local, a fila de pendências e a recusa de importação são apagados do navegador. O app passou a ter Content-Security-Policy, e o banco teve os privilégios reduzidos ao mínimo.
 
 - **Novo na 1.3.0:** layout otimizado para celular (botões com área de toque de 44 px, campos sem zoom automático no iOS, telas a partir de 320 px, folha de adicionar alimento ajustada ao teclado virtual) e instalação como app (PWA), com ícone na tela inicial, tela cheia e uso sem internet.
+- **Novo na 1.5.0:** edição de alimentos. No Diário, o botão ✎ de cada lançamento permite corrigir a quantidade e a medida (unidade ou gramas), com calorias e macros recalculados. Na busca, o botão "Editar" dos alimentos que você cadastrou permite corrigir nome, unidade, peso da unidade e valores por 100 g. Editar um alimento cadastrado não altera lançamentos antigos. As alterações usam a fila de sincronização existente, sem mudanças no banco.
 - **Novo na 1.4.0:** card "Evolução mensal" na aba Progresso. Mostra um mês por vez, com navegação entre meses, resumo de peso (primeiro, último, variação e distância da meta), calorias (média diária, dias registrados e dias acima da meta) e água (média e dias com a meta atingida), gráficos de peso e de calorias por dia e comparação com o mês anterior. Os números são calculados no aparelho a partir dos dados já salvos, sem gravar nada novo. Os dias acima da meta usam as metas atuais do perfil.
 ## Instalar como app (PWA)
 O app pode ser instalado na tela inicial. É necessário abri-lo por **HTTPS** (por exemplo, o GitHub Pages) ou por `http://localhost`.
@@ -88,6 +89,7 @@ A fonte *Plus Jakarta Sans* é carregada do Google Fonts e a biblioteca `@supaba
 As informações nutricionais são aproximadas e não substituem orientação profissional. Para metas clínicas, consulte um nutricionista.
 
 ## Histórico de versões
+- **1.5.0**: edição de alimentos: quantidade de um lançamento do diário e alimentos cadastrados pelo usuário. O hash da CSP foi atualizado por causa da mudança no script inline.
 - **1.4.0**: card "Evolução mensal" na aba Progresso, com resumo de peso, calorias e água por mês, gráficos do mês e comparação com o mês anterior. O hash da CSP foi atualizado por causa da mudança no script inline.
 - **1.3.0**: layout otimizado para celular e instalação como PWA (manifesto, ícones, service worker, uso sem internet, card "Instalar app" e aviso de nova versão). A CSP ganhou `manifest-src 'self'` e `worker-src 'self'`.
 

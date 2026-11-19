@@ -2,7 +2,7 @@
 
 Diário alimentar simples para acompanhar calorias, macronutrientes, água e peso. Funciona em um único arquivo HTML, sem build. Com login Google, os dados ficam em um banco Supabase e sincronizam entre dispositivos.
 
-**Versão atual:** 1.6.0
+**Versão atual:** 1.7.0
 
 ## Funcionalidades
 
@@ -20,6 +20,7 @@ Diário alimentar simples para acompanhar calorias, macronutrientes, água e pes
 - **Novo na 1.2.1:** correções de segurança. Ao sair da conta, o cache local, a fila de pendências e a recusa de importação são apagados do navegador. O app passou a ter Content-Security-Policy, e o banco teve os privilégios reduzidos ao mínimo.
 
 - **Novo na 1.3.0:** layout otimizado para celular (botões com área de toque de 44 px, campos sem zoom automático no iOS, telas a partir de 320 px, folha de adicionar alimento ajustada ao teclado virtual) e instalação como app (PWA), com ícone na tela inicial, tela cheia e uso sem internet.
+- **Novo na 1.7.0:** catálogo ampliado e código de barras. A busca por nome passou a incluir cerca de 580 alimentos da TACO (funciona sem internet e sem login), ignorando acentos e exigindo todas as palavras digitadas (máximo de 50 resultados). A nova aba "Código" consulta um produto de mercado pelo número do código de barras, digitado ou lido pela câmera (botão "Escanear com a câmera", só em navegadores com `BarcodeDetector`, como Chrome e Edge no Android e no computador; no iPhone, digite o número). Os valores vêm do Open Food Facts por uma função do Supabase, são conferidos antes de aparecer e, se o produto não existir ou estiver incompleto, o app oferece "Cadastrar este produto". A câmera só liga ao tocar no botão e nenhuma imagem é guardada ou enviada. Veja "Catálogo TACO e código de barras" abaixo.
 - **Novo na 1.6.0:** lembretes. No Perfil, o card "Lembretes" permite escolher os horários de café da manhã, almoço, lanche e jantar, o dia e o horário da pesagem semanal e, se quiser, lembretes de água (início, fim e intervalo). O botão "Adicionar ao calendário" gera um arquivo `.ics` com eventos recorrentes e alarme, que funciona com o app fechado em Android, iPhone e computador. Na aba Diário, um aviso mostra a refeição ou a pesagem pendente mais recente (só para hoje) e pode ser dispensado por refeição e por dia. Os horários e as dispensas ficam só no `localStorage` do aparelho, sem mudanças no banco. O alarme depende das notificações do aplicativo de calendário, e é preciso apagar os lembretes antigos do calendário antes de importar o arquivo de novo.
 - **Novo na 1.5.0:** edição de alimentos. No Diário, o botão ✎ de cada lançamento permite corrigir a quantidade e a medida (unidade ou gramas), com calorias e macros recalculados. Na busca, o botão "Editar" dos alimentos que você cadastrou permite corrigir nome, unidade, peso da unidade e valores por 100 g. Editar um alimento cadastrado não altera lançamentos antigos. As alterações usam a fila de sincronização existente, sem mudanças no banco.
 - **Novo na 1.4.0:** card "Evolução mensal" na aba Progresso. Mostra um mês por vez, com navegação entre meses, resumo de peso (primeiro, último, variação e distância da meta), calorias (média diária, dias registrados e dias acima da meta) e água (média e dias com a meta atingida), gráficos de peso e de calorias por dia e comparação com o mês anterior. Os números são calculados no aparelho a partir dos dados já salvos, sem gravar nada novo. Os dias acima da meta usam as metas atuais do perfil.
@@ -60,6 +61,22 @@ A fonte *Plus Jakarta Sans* é carregada do Google Fonts e a biblioteca `@supaba
 6. No `index.html`, confira as constantes `SUPABASE_URL` e `SUPABASE_KEY`. Se mudar de projeto, atualize também o endereço em `connect-src` na meta tag de Content-Security-Policy.
 7. Se você usa somente o login com Google, desative em **Authentication > Sign In / Providers** os provedores **Email** e **Anonymous**. Assim ninguém cria conta diretamente pela API com a chave publicável.
 
+## Catálogo TACO e código de barras
+
+**Catálogo (`data/taco.json`).** Gerado a partir da Tabela Brasileira de Composição de Alimentos (TACO, 4ª edição, NEPA/UNICAMP, 2011), pelos CSVs do repositório [brolesi/taco](https://github.com/brolesi/taco) (licença MIT do código e da organização dos dados). A licença de redistribuição dos valores da TACO **não foi confirmada por escrito** com o NEPA/UNICAMP. Itens sem energia ou macronutriente na fonte são descartados (15 itens, como óleos e sal). As medidas caseiras da POF/IBGE só entram quando o nome é idêntico ao da TACO. Na prática nenhum item corresponde, então os itens do catálogo usam gramas. Para regenerar:
+1. Baixe `data/processed/taco/taco_composicao.csv` e `data/processed/pof/pof_medidas_caseiras.csv` do repositório acima para `scripts/fonte/`.
+2. Na raiz do projeto, rode `python scripts/gerar_taco.py`.
+3. Confira a contagem de itens impressa e publique uma nova versão do app (o `data/taco.json` está na lista `ARQUIVOS` do `sw.js`).
+
+**Consulta por código de barras.** A aba "Código" chama a função `consultar-codigo` (`supabase/functions/consultar-codigo/`), que consulta o [Open Food Facts](https://world.openfoodfacts.org) (dados sob licença ODbL, atribuição obrigatória) e guarda os produtos válidos por 30 dias na tabela `produtos_cache`. Para publicar:
+1. Aplique a migração `20261119160000_create_produtos_cache.sql`. A tabela tem RLS ativada, sem políticas e sem acesso para `anon` e `authenticated`: só a função, com a chave de serviço, lê e grava.
+2. Defina as variáveis de ambiente da função (no painel do Supabase ou com `supabase secrets set`, nunca no repositório): `OFF_USER_AGENT` (formato `EmagrecAI/1.7 (seu-email)`, exigido pelo Open Food Facts) e `ORIGENS_PERMITIDAS` (origens do app separadas por vírgula, por exemplo `https://<usuario>.github.io,http://localhost:8000`).
+3. Publique a função com `supabase functions deploy consultar-codigo`. O `supabase/config.toml` define `verify_jwt = false`, porque o visitante não tem login e a chave publicável não é um JWT. O app envia a chave no cabeçalho `apikey`.
+- **Limites:** código com 8, 12, 13 ou 14 dígitos e dígito verificador válido; 30 pedidos por minuto por endereço de rede; 20 consultas por minuto ao Open Food Facts; consulta externa com limite de 5 s; produtos não encontrados ficam 1 hora só na memória da função. Os contadores são por instância da função.
+- **Erros do contrato:** `codigo_invalido`, `origem_nao_permitida`, `nao_encontrado`, `dados_incompletos`, `limite_excedido` e `servico_indisponivel`.
+- **Atribuição:** o card "Sobre o app" do Perfil cita a TACO e o Open Food Facts.
+- A leitura pela câmera precisa de HTTPS ou `http://localhost`. O vídeo não é gravado: só o número lido sai do aparelho.
+
 ## Segurança e privacidade
 
 - A `SUPABASE_KEY` é a chave **publicável**. Ela é pública por natureza e pode ficar no HTML. A proteção dos dados vem da Row Level Security: cada usuário lê e altera somente as próprias linhas, e o acesso anônimo é bloqueado.
@@ -81,6 +98,10 @@ A fonte *Plus Jakarta Sans* é carregada do Google Fonts e a biblioteca `@supaba
 | `sw.js` | Service worker: cache para uso sem internet e aviso de atualização. |
 | `icons/` | Ícones do app (192, 512, 512 mascarável e `apple-touch-icon` de 180) e a imagem de origem `icon-source.png`. |
 | `supabase/migrations/` | Migrações SQL do banco (tabelas, restrições e RLS). |
+| `supabase/functions/` | Função `consultar-codigo` (consulta ao Open Food Facts com cache). |
+| `supabase/config.toml` | Configuração da função (`verify_jwt = false`). |
+| `data/taco.json` | Catálogo de alimentos da TACO, gerado por `scripts/gerar_taco.py`. |
+| `scripts/` | Script de geração do catálogo e CSVs de origem (`scripts/fonte/`). Não fazem parte do app. |
 | `openspec/` | Especificações e propostas de mudança (OpenSpec). |
 | `.kiro/` | Prompts e skills do Kiro usados no fluxo OpenSpec. |
 
@@ -91,6 +112,7 @@ A fonte *Plus Jakarta Sans* é carregada do Google Fonts e a biblioteca `@supaba
 As informações nutricionais são aproximadas e não substituem orientação profissional. Para metas clínicas, consulte um nutricionista.
 
 ## Histórico de versões
+- **1.7.0**: catálogo TACO na busca por nome (cerca de 580 alimentos, offline), aba "Código" com consulta por código de barras (Open Food Facts via função do Supabase) e leitura pela câmera onde houver suporte. A CSP ganhou `'self'` em `connect-src` e o hash foi atualizado.
 - **1.6.0**: lembretes de refeição, pesagem semanal e água (opcional) com horários editáveis, exportação para o calendário em arquivo `.ics` e aviso de pendência na aba Diário, com dispensa por refeição e por dia. O hash da CSP foi atualizado por causa da mudança no script inline.
 - **1.5.0**: edição de alimentos: quantidade de um lançamento do diário e alimentos cadastrados pelo usuário. O hash da CSP foi atualizado por causa da mudança no script inline.
 - **1.4.0**: card "Evolução mensal" na aba Progresso, com resumo de peso, calorias e água por mês, gráficos do mês e comparação com o mês anterior. O hash da CSP foi atualizado por causa da mudança no script inline.

@@ -11,7 +11,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="EmagrecAI">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-u1nMmtf04A0lO3rkCzVNrtXD4180c5xDKRduPRzgIS0=' https://cdn.jsdelivr.net; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://*.googleusercontent.com; connect-src https://sclzuaoqxjstanugvyyq.supabase.co; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-HuSGQoBO90Xg5WUry+/+Ei4ihYHP5wpTmr7QscKu/g8=' https://cdn.jsdelivr.net; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://*.googleusercontent.com; connect-src 'self' https://sclzuaoqxjstanugvyyq.supabase.co; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
 <title>EmagrecAI – Diário nutricional</title>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
@@ -119,7 +119,12 @@ svg text{fill:var(--mut);font-size:10px;font-family:inherit}
 .aviso p{margin:0;font-weight:600}
 .aviso>div{display:flex;align-items:center;gap:4px;flex:none}
 .aviso .btn{width:auto;padding:8px 14px}
+.bcw{margin:12px 0 0}
+.bcw video{width:100%;max-height:260px;border-radius:14px;background:#000;object-fit:cover;display:block;margin-bottom:8px}
+#bcmsg .btn{margin-top:10px}
+.bcs{margin-top:10px}
 @media (max-width:359px){
+.tabs button{font-size:13px;padding:9px 4px}
 #app{padding-left:12px;padding-right:12px}
 .hero{gap:12px}
 .ring{width:120px;height:120px}
@@ -160,7 +165,7 @@ const def=()=>({p:{sex:"f",age:30,h:165,w:70,tw:65,act:1.375,goal:"lose",kcal:18
    A chave publicável é pública por natureza; a proteção dos dados é feita por RLS no banco. */
 const SUPABASE_URL="https://sclzuaoqxjstanugvyyq.supabase.co";
 const SUPABASE_KEY="sb_publishable_slijF86mJygHkuv2qnsY-g_RawQNbii";
-const VERSAO="1.6.0";
+const VERSAO="1.7.0";
 const lsGet=k=>{try{return localStorage.getItem(k)}catch(e){return null}};
 const lsSet=(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}};
 const lsDel=k=>{try{localStorage.removeItem(k)}catch(e){}};
@@ -562,7 +567,8 @@ function profile(){
   ${installCard()}<div class="card about"><h2>Sobre o app</h2>
   <p class="note" style="margin:0 0 12px">Quer colaborar com o desenvolvimento? A contribuição é voluntária e pode ser feita com código no GitHub ou com apoio via Pix.</p>
   <p class="lk"><label>GitHub</label><a href="${esc(GITHUB_URL)}" target="_blank" rel="noopener noreferrer">${esc(GITHUB_URL.replace("https://",""))}</a></p>
-  <label for="pixkey">Chave Pix</label><input id="pixkey" class="pix" readonly value="${esc(PIX_KEY)}"><button class="btn sec" data-a="copypix">Copiar chave Pix</button></div>
+  <label for="pixkey">Chave Pix</label><input id="pixkey" class="pix" readonly value="${esc(PIX_KEY)}"><button class="btn sec" data-a="copypix">Copiar chave Pix</button>
+  <p class="note" style="margin:14px 0 0">Alimentos: Tabela Brasileira de Composição de Alimentos (TACO, NEPA/UNICAMP, 4ª edição, 2011). Produtos por código de barras: Open Food Facts, licença ODbL.</p></div>
   <p class="ver">EmagrecAI v${VERSAO}</p>`;
 }
 const GLOGO='<svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.5 5.4 2.6 13.2l7.9 6.1C12.4 13.6 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.6 3-2.3 5.5-4.8 7.2l7.5 5.8c4.4-4.1 7.1-10.1 7.1-17.5z"/><path fill="#FBBC05" d="M10.5 28.7c-.5-1.5-.8-3-.8-4.7s.3-3.2.8-4.7l-7.9-6.1C1 16.4 0 20.1 0 24s1 7.6 2.6 10.8l7.9-6.1z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.5-5.8c-2.1 1.4-4.8 2.3-8.4 2.3-6.3 0-11.6-4.1-13.5-9.8l-7.9 6.1C6.5 42.6 14.6 48 24 48z"/></svg>';
@@ -580,20 +586,113 @@ function accountCard(){
 function readP(){const v=id=>$("#pf_"+id).value;return{sex:v("sex"),age:+v("age")||30,h:+v("h")||165,w:+v("w")||70,tw:+v("tw")||65,wg:+v("wg")||2000,act:+v("act"),goal:v("goal"),kcal:+v("kcal")||1800}}
 function suggest(p){const b=10*p.w+6.25*p.h-5*p.age+(p.sex==="m"?5:-161),t=b*p.act+(p.goal==="lose"?-500:p.goal==="gain"?300:0);return Math.max(1200,Math.round(t/10)*10)}
 /* Sheet */
+/* ===== Catálogo ampliado (TACO) e consulta por código de barras =====
+   Catálogo: data/taco.json, carregado na primeira abertura da janela e mantido em memória.
+   Código de barras: função "consultar-codigo" no Supabase (consulta o Open Food Facts). */
+const norm=s=>String(s).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+const numOk=(v,max)=>typeof v==="number"&&isFinite(v)&&v>=0&&v<=max;
+let TACO=null,tacoSt="";
+function tacoItem(x){
+  if(!x||typeof x.n!=="string"||!x.n.trim()||!numOk(x.k,900)||!numOk(x.c,100)||!numOk(x.p,100)||!numOk(x.f,100)||x.c+x.p+x.f>105)return null;
+  const f={n:x.n.trim().slice(0,120),k:x.k,c:x.c,p:x.p,f:x.f};
+  if(Array.isArray(x.u)&&x.u.length===3&&typeof x.u[0]==="string"&&typeof x.u[1]==="string"&&typeof x.u[2]==="number"&&x.u[2]>0&&x.u[2]<=1000)f.u=[x.u[0].slice(0,40),x.u[1].slice(0,40),x.u[2]];
+  f._n=norm(f.n);return f;
+}
+async function carregarTaco(){
+  if(TACO||tacoSt==="carregando")return;tacoSt="carregando";
+  try{const r=await fetch("data/taco.json");if(!r.ok)throw 0;const a=await r.json();if(!Array.isArray(a))throw 0;TACO=a.map(tacoItem).filter(Boolean);tacoSt="ok"}
+  catch(e){tacoSt="erro"}
+  const q=$("#q");if(sh&&!sh.food&&sh.tab==="buscar"&&q)list(q.value);
+}
+function gtinOk(c){
+  if(!/^\d+$/.test(c)||![8,12,13,14].includes(c.length))return false;
+  let s=0;for(let i=0;i<c.length-1;i++)s+=+c[c.length-2-i]*(i%2?1:3);
+  return (10-s%10)%10===+c[c.length-1];
+}
+const CODIGO_URL=SUPABASE_URL+"/functions/v1/consultar-codigo";
+const ERROS_CODIGO={codigo_invalido:"Código inválido. Confira o número",origem_nao_permitida:"Este endereço do app não pode consultar produtos.",nao_encontrado:"Produto não encontrado. Você pode cadastrá-lo.",dados_incompletos:"O produto existe, mas faltam dados nutricionais. Você pode cadastrá-lo.",limite_excedido:"Muitas consultas seguidas. Aguarde um minuto e tente de novo.",servico_indisponivel:"A consulta de produtos está indisponível agora. Tente mais tarde ou use a busca por nome."};
+const txtLim=(s,n)=>String(s==null?"":s).replace(/[\u0000-\u001f\u007f]/g,"").trim().slice(0,n);
+function produtoDe(p){
+  if(!p||typeof p!=="object")return null;
+  const n=txtLim(p.nome,120);
+  if(!n||!numOk(p.kcal100,900)||!numOk(p.c100,100)||!numOk(p.p100,100)||!numOk(p.f100,100)||p.c100+p.p100+p.f100>105)return null;
+  const marca=txtLim(p.marca,60),f={n:(marca&&!norm(n).includes(norm(marca))?n+" ("+marca+")":n).slice(0,120),k:p.kcal100,c:p.c100,p:p.p100,f:p.f100};
+  if(numOk(p.porcao_g,1000)&&p.porcao_g>0)f.u=["porção do rótulo","porções do rótulo",p.porcao_g];
+  return f;
+}
+function setBc(m,cad){const el=$("#bcmsg");if(el)el.innerHTML=esc(m)+(cad?`<button class="btn sec" data-a="bcnovo">Cadastrar este produto</button>`:"")}
+async function bcBuscar(){
+  const inp=$("#bc");if(!inp||!sh||sh.bcBusy)return;
+  const c=inp.value.replace(/\D/g,"");
+  if(!gtinOk(c)){setBc(ERROS_CODIGO.codigo_invalido);inp.focus();return}
+  if(location.protocol==="file:"){setBc("A consulta por código não funciona com o arquivo aberto direto. Use o endereço do app.");return}
+  if(navigator.onLine===false){setBc("Sem conexão. Digite o alimento pela busca ou cadastre-o.");return}
+  sh.bcBusy=true;setBc("Buscando produto…");
+  const ac=new AbortController(),to=setTimeout(()=>ac.abort(),10000),aba=sh;
+  try{
+    const r=await fetch(CODIGO_URL,{method:"POST",headers:{"Content-Type":"application/json",apikey:SUPABASE_KEY},body:JSON.stringify({codigo:c}),signal:ac.signal});
+    let b=null;try{b=await r.json()}catch(e){}
+    if(sh!==aba||sh.tab!=="codigo")return;
+    const f=r.ok&&b?produtoDe(b.produto):null;
+    if(f){sh.food=f;sh.qv=null;sh.un=null;drawSheet();return}
+    const er=b&&typeof b.erro==="string"&&ERROS_CODIGO[b.erro]?b.erro:"servico_indisponivel";
+    setBc(ERROS_CODIGO[er],er==="nao_encontrado"||er==="dados_incompletos");
+  }catch(e){
+    if(sh===aba&&sh.tab==="codigo")setBc(e&&e.name==="AbortError"?"A consulta demorou demais. Tente de novo.":navigator.onLine===false?"Sem conexão. Digite o alimento pela busca ou cadastre-o.":ERROS_CODIGO.servico_indisponivel);
+  }finally{clearTimeout(to);aba.bcBusy=false}
+}
+/* Câmera: só liga por ação do usuário e é desligada ao concluir, cancelar, trocar de aba, fechar ou ocultar a página. */
+let CAM_EAN=false,cam=null;
+if(window.isSecureContext&&navigator.mediaDevices&&navigator.mediaDevices.getUserMedia&&"BarcodeDetector" in window&&BarcodeDetector.getSupportedFormats)BarcodeDetector.getSupportedFormats().then(l=>{CAM_EAN=l.includes("ean_13")}).catch(()=>{});
+function camParar(){
+  if(!cam)return;
+  clearInterval(cam.t);if(cam.s)cam.s.getTracks().forEach(t=>t.stop());cam=null;
+  const v=$("#bcvid");if(v)v.srcObject=null;const w=$("#bcw");if(w)w.hidden=true;
+}
+async function camIniciar(){
+  if(cam||!sh||sh.tab!=="codigo")return;
+  const aba=sh;let s;cam={s:null,t:0,pend:true};
+  setBc("Abrindo a câmera…");
+  try{s=await navigator.mediaDevices.getUserMedia({video:{facingMode:"environment"},audio:false})}
+  catch(e){cam=null;setBc(e&&e.name==="NotAllowedError"?"Permissão da câmera negada. Digite o número do código.":"Não foi possível abrir a câmera. Digite o número do código.");return}
+  if(sh!==aba||sh.tab!=="codigo"||!cam){s.getTracks().forEach(t=>t.stop());cam=null;return}
+  cam.s=s;cam.pend=false;
+  const v=$("#bcvid"),w=$("#bcw");v.srcObject=s;w.hidden=false;setBc("Aponte para o código de barras.");
+  try{await v.play()}catch(e){}
+  let det;try{det=new BarcodeDetector({formats:["ean_13"]})}catch(e){camParar();setBc("Leitura pela câmera indisponível. Digite o número do código.");return}
+  let ler=false;
+  cam.t=setInterval(async()=>{
+    if(ler||!cam)return;ler=true;
+    try{
+      const r=await det.detect(v),c=r.map(x=>String(x.rawValue||"")).find(gtinOk);
+      if(c&&cam){camParar();$("#bc").value=c;bcBuscar()}
+    }catch(e){}
+    ler=false;
+  },250);
+}
+document.addEventListener("visibilitychange",()=>{if(document.hidden)camParar()});
 function openSheet(m){sh={m,tab:"buscar",food:null};drawSheet()}
-function closeSheet(){sh=null;$("#sheet").hidden=true;$("#sheet").innerHTML=""}
+function closeSheet(){camParar();sh=null;$("#sheet").hidden=true;$("#sheet").innerHTML=""}
 function drawSheet(){
-  const el=$("#sheet");el.hidden=false;const mn=MEALS.find(x=>x[0]===sh.m)[1];
+  camParar();const el=$("#sheet");el.hidden=false;const mn=MEALS.find(x=>x[0]===sh.m)[1];
   let b="";const ef=sh.ef||null,ev=(x,i)=>ef?esc(String(x)):"",eu=ef?ud(ef):null;
   if(sh.food){const f=sh.food,u=ud(f),m=u[2]/100;b=`<button class="sec btn" data-a="${sh.edit!=null?"close":"back"}" style="width:auto;padding:6px 12px;margin-bottom:12px">‹ Voltar</button><h3>${esc(f.n)}</h3><p class="note" style="margin:2px 0 12px">1 ${u[0]} (${u[2]} g): ${fmt(f.k*m)} kcal · C ${f1(f.c*m)} · P ${f1(f.p*m)} · G ${f1(f.f*m)}</p><div class="grid2"><div><label>Quantidade</label><input id="gr" type="number" inputmode="decimal" step="any" value="${sh.qv!=null?sh.qv:1}"></div><div><label>Medida</label><select id="un"><option value="u">${esc(u[1])}</option><option value="g"${sh.un==="g"?" selected":""}>gramas</option></select></div></div><div class="pv" id="pv"></div>${sh.edit!=null?`<button class="btn" data-a="saveedit">Salvar alterações</button>`:`<button class="btn" data-a="addfood">Adicionar ao ${mn.toLowerCase()}</button>`}`}
-  else b=`<div class="tabs"><button data-a="tab" data-t="buscar" class="${sh.tab==="buscar"?"on":""}">Buscar</button><button data-a="tab" data-t="criar" class="${sh.tab==="criar"?"on":""}">Novo alimento</button></div>`+(sh.tab==="buscar"?`<input id="q" type="search" placeholder="Buscar alimento, ex.: arroz" autocomplete="off"><div class="list" id="list"></div>`:`<div class="field"><label>Nome</label><input id="nf_n" value="${ef?esc(ef.n):""}" placeholder="Ex.: Pão de queijo"></div><div class="grid2"><div><label>Unidade (ex.: fatia)</label><input id="nf_u" value="${ef?esc(eu[0]):""}" placeholder="unidade"></div><div><label>Peso da unidade (g)</label><input id="nf_ug" type="number" inputmode="decimal" value="${ef?ev(eu[2]):100}"></div></div><p class="note" style="margin:0 0 8px">Informe os valores nutricionais por 100 g</p><div class="grid2"><div><label>Calorias (kcal)</label><input id="nf_k" type="number" inputmode="decimal" value="${ef?ev(ef.k):""}"></div><div><label>Carboidratos (g)</label><input id="nf_c" type="number" inputmode="decimal" value="${ef?ev(ef.c):""}"></div><div><label>Proteínas (g)</label><input id="nf_p" type="number" inputmode="decimal" value="${ef?ev(ef.p):""}"></div><div><label>Gorduras (g)</label><input id="nf_f" type="number" inputmode="decimal" value="${ef?ev(ef.f):""}"></div></div><button class="btn" data-a="newfood">${ef?"Salvar alterações":"Salvar alimento"}</button>`);
+  else b=`<div class="tabs"><button data-a="tab" data-t="buscar" class="${sh.tab==="buscar"?"on":""}">Buscar</button><button data-a="tab" data-t="codigo" class="${sh.tab==="codigo"?"on":""}">Código</button><button data-a="tab" data-t="criar" class="${sh.tab==="criar"?"on":""}">Novo alimento</button></div>`+(sh.tab==="buscar"?`<input id="q" type="search" placeholder="Buscar alimento, ex.: arroz" autocomplete="off"><div class="list" id="list"></div>`:sh.tab==="codigo"?`<div class="field"><label for="bc">Número do código de barras</label><input id="bc" inputmode="numeric" autocomplete="off" placeholder="Ex.: 7891000100103"></div><p class="note" style="margin:0 0 10px">O número fica embaixo das barras, na embalagem do produto.</p><button class="btn" data-a="bcbuscar">Buscar produto</button>${CAM_EAN?`<button class="btn sec bcs" data-a="bcscan">Escanear com a câmera</button>`:""}<div class="bcw" id="bcw" hidden><video id="bcvid" playsinline muted aria-label="Imagem da câmera para ler o código de barras"></video><button class="btn sec" data-a="bccancel">Cancelar</button></div><div class="note" id="bcmsg" aria-live="polite"></div>`:`<div class="field"><label>Nome</label><input id="nf_n" value="${ef?esc(ef.n):""}" placeholder="Ex.: Pão de queijo"></div><div class="grid2"><div><label>Unidade (ex.: fatia)</label><input id="nf_u" value="${ef?esc(eu[0]):""}" placeholder="unidade"></div><div><label>Peso da unidade (g)</label><input id="nf_ug" type="number" inputmode="decimal" value="${ef?ev(eu[2]):100}"></div></div><p class="note" style="margin:0 0 8px">Informe os valores nutricionais por 100 g</p><div class="grid2"><div><label>Calorias (kcal)</label><input id="nf_k" type="number" inputmode="decimal" value="${ef?ev(ef.k):""}"></div><div><label>Carboidratos (g)</label><input id="nf_c" type="number" inputmode="decimal" value="${ef?ev(ef.c):""}"></div><div><label>Proteínas (g)</label><input id="nf_p" type="number" inputmode="decimal" value="${ef?ev(ef.p):""}"></div><div><label>Gorduras (g)</label><input id="nf_f" type="number" inputmode="decimal" value="${ef?ev(ef.f):""}"></div></div><button class="btn" data-a="newfood">${ef?"Salvar alterações":"Salvar alimento"}</button>`);
   el.innerHTML=`<div class="sheet" role="dialog" aria-label="Adicionar alimento"><div class="hd"><h2 style="margin:0">${mn}</h2><button class="rnd" data-a="close" aria-label="Fechar">×</button></div>${b}</div>`;
-  if(!sh.food&&sh.tab==="buscar"){list("");$("#q").focus()}
+  if(!sh.food&&sh.tab==="buscar"){list("");$("#q").focus();carregarTaco()}
+  if(!sh.food&&sh.tab==="codigo")$("#bc").focus();
   if(sh.food)pv();
 }
 function list(q){
-  q=q.trim().toLowerCase();const all=[...S.custom,...FOODS],r=(q?all.filter(f=>f.n.toLowerCase().includes(q)):all).slice(0,40);
-  window._r=r;$("#list").innerHTML=r.length?r.map((f,i)=>{const u=ud(f),b=`<button class="food" data-a="pick" data-i="${i}"><div>${esc(f.n)}<br><span>1 ${esc(u[0])} · ${u[2]} g</span></div><b>${fmt(f.k*u[2]/100)} kcal</b></button>`;return S.custom.includes(f)?`<div style="display:flex;align-items:center">${b.replace('class="food"','class="food" style="flex:1"')}<button class="sec btn" data-a="editfood" data-i="${i}" style="width:auto;padding:6px 12px" aria-label="Editar ${esc(f.n)}">Editar</button></div>`:b}).join(""):`<p class="empty">Nenhum resultado. Use "Novo alimento" para cadastrar.</p>`;
+  const t=norm(q).split(/\s+/).filter(Boolean);let r;
+  if(!t.length)r=[...S.custom,...FOODS].slice(0,50);
+  else{
+    const pri=a=>{const o=a.map(f=>({f,n:f._n||norm(f.n)})).filter(x=>t.every(w=>x.n.includes(w)));return[...o.filter(x=>x.n.startsWith(t[0])),...o.filter(x=>!x.n.startsWith(t[0]))]},
+      loc=[...pri(FOODS),...pri(S.custom)],vistos=new Set(loc.map(x=>x.n));
+    r=[...loc,...(TACO?pri(TACO).filter(x=>!vistos.has(x.n)):[])].map(x=>x.f).slice(0,50);
+  }
+  window._r=r;const aviso=tacoSt==="erro"?`<p class="note">Catálogo ampliado indisponível</p>`:"";
+  $("#list").innerHTML=aviso+(r.length?r.map((f,i)=>{const u=ud(f),b=`<button class="food" data-a="pick" data-i="${i}"><div>${esc(f.n)}<br><span>1 ${esc(u[0])} · ${u[2]} g</span></div><b>${fmt(f.k*u[2]/100)} kcal</b></button>`;return S.custom.includes(f)?`<div style="display:flex;align-items:center">${b.replace('class="food"','class="food" style="flex:1"')}<button class="sec btn" data-a="editfood" data-i="${i}" style="width:auto;padding:6px 12px" aria-label="Editar ${esc(f.n)}">Editar</button></div>`:b}).join(""):`<p class="empty">Nenhum resultado. Use "Novo alimento" para cadastrar.</p>`);
 }
 function pv(){const f=sh.food,g=grams(),r=g/100;$("#pv").innerHTML=[["kcal",f.k*r],["Carb.",f.c*r],["Prot.",f.p*r],["Gord.",f.f*r]].map(x=>`<div><b>${x[0]==="kcal"?fmt(x[1]):f1(x[1])}</b><small>${x[0]}</small></div>`).join("")}
 document.addEventListener("input",e=>{if(e.target.id==="q")list(e.target.value);if(e.target.id==="un")$("#gr").value=e.target.value==="u"?1:ud(sh.food)[2];if(e.target.id==="gr"||e.target.id==="un")pv()});
@@ -606,6 +705,10 @@ document.addEventListener("click",e=>{
   else if(a==="open")openSheet(t.dataset.m);
   else if(a==="close")closeSheet();
   else if(a==="tab"){sh.tab=t.dataset.t;sh.ef=null;drawSheet()}
+  else if(a==="bcbuscar")bcBuscar();
+  else if(a==="bcscan")camIniciar();
+  else if(a==="bccancel"){camParar();setBc("")}
+  else if(a==="bcnovo"){sh.ef=null;sh.tab="criar";drawSheet()}
   else if(a==="editfood"){sh.ef=window._r[+t.dataset.i];sh.tab="criar";drawSheet()}
   else if(a==="edit"){const e=day(k)[t.dataset.m][+t.dataset.i];if(!e||!(e.g>0))return;const b=[...S.custom,...FOODS].find(x=>x.n===e.n),u=b?ud(b):["porção","porções",100],r=100/e.g,usaU=!!(e.q&&b);sh={m:t.dataset.m,edit:+t.dataset.i,tab:"buscar",food:{n:e.n,k:e.k*r,c:e.c*r,p:e.p*r,f:e.f*r,u},qv:usaU?Math.round(e.g/u[2]*100)/100:e.g,un:usaU?"u":"g"};drawSheet()}
   else if(a==="saveedit"){const es=day(k)[sh.m],e=es[sh.edit],f=sh.food,u=ud(f),qv=+$("#gr").value,g=grams();if(!e||!(g>0)||!isFinite(g)){$("#gr").focus();return}const r=g/100,m=sh.m;if(!e.id)e.id=uid();Object.assign(e,{g,q:$("#un").value==="u"?qs(qv,u):"",k:f.k*r,c:f.c*r,p:f.p*r,f:f.f*r});commit("entry.add",()=>rowEntry(m,k,e));closeSheet();render()}

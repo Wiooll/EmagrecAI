@@ -160,6 +160,15 @@ A versão atual é `1.5.0` e a nova será `1.6.0`, nos dois lugares (`index.html
 
 ## Open Questions
 
+**Decisões tomadas na implementação:**
+- **Fonte da TACO:** CSVs do repositório `brolesi/taco` (licença MIT do código e da organização dos dados). A redistribuição dos valores da TACO pelo NEPA/UNICAMP **não foi confirmada por escrito**. O risco foi aceito pelo autor, com atribuição no app e no README. Open Food Facts: ODbL, atribuição no app e no README.
+- **E-mail do `User-Agent`:** definido pelo autor, guardado só em variável de ambiente (`OFF_USER_AGENT`).
+- **Ordem e versão:** esta mudança entra antes de `add-photo-food-capture`. O app já estava na `1.6.0` (lembretes), então a nova versão é `1.7.0` (o texto acima cita `1.5.0` e `1.6.0` porque foi escrito antes).
+- **Medidas da POF/IBGE:** nenhum nome da POF é idêntico a um da TACO, então todos os itens do catálogo usam gramas.
+- **Itens descartados:** 15 itens da TACO sem energia ou macronutriente na fonte (óleos, sal, leite UHT, entre outros). Catálogo final: 582 itens.
+
+**Ainda em aberto:**
+
 - **Fonte dos dados da TACO**: gerar o JSON a partir dos arquivos oficiais da UNICAMP (mais seguro quanto à licença, mais trabalho) ou partir do repositório `brolesi/taco` (mais rápido, com licença a conferir).
 - **Termos de redistribuição da TACO e condições do ODbL** para o cache de produtos (base derivada). Pode exigir texto de atribuição específico.
 - **E-mail de contato** para o `User-Agent` do Open Food Facts.

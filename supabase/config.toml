@@ -1,0 +1,4 @@
+# Função pública: o visitante não tem login e a chave publicável (sb_publishable_...) não é um JWT.
+# A proteção está na própria função (código, origem, limites e cache).
+[functions.consultar-codigo]
+verify_jwt = false

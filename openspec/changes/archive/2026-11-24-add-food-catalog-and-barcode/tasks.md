@@ -28,7 +28,7 @@
 - [x] 4.4 Implementar a validação e a normalização da resposta externa (faixas, soma dos macronutrientes, nome e marca sem caracteres de controle) e os códigos de erro do contrato
 - [x] 4.5 Implementar o cache: leitura com validade de 30 dias, gravação somente de produtos válidos, cache em memória de 1 hora para códigos não encontrados e uso do dado antigo quando a consulta externa falhar
 - [x] 4.6 Implementar a proteção contra abuso: `ORIGENS_PERMITIDAS`, limite por origem de rede com `Retry-After` e teto de consultas externas por minuto
-- [ ] 4.7 Definir `verify_jwt` e a forma de chamada com a chave publicável conforme o comportamento atual do Supabase e confirmar que o visitante sem login consegue consultar
+- [x] 4.7 Definir `verify_jwt` e a forma de chamada com a chave publicável conforme o comportamento atual do Supabase e confirmar que o visitante sem login consegue consultar
 - [x] 4.8 Garantir que erros e logs não contenham a chave de serviço, o contato nem texto bruto do provedor
 
 ## 5. Aba "Código" no app
@@ -46,7 +46,7 @@
 - [x] 6.2 Abrir a câmera traseira por ação do usuário, detectar a cada 250 ms, ignorar leituras com dígito verificador inválido e, na primeira válida, parar a câmera, preencher o campo e consultar
 - [x] 6.3 Desligar a câmera (`track.stop()`) ao concluir, cancelar, trocar de aba, fechar a janela e quando a página ficar oculta
 - [x] 6.4 Tratar permissão negada e ausência de câmera com mensagem e manter a digitação
-- [ ] 6.5 Confirmar no navegador que o vídeo por `srcObject` não gera violação de CSP e, se gerar, ajustar a diretiva no menor escopo possível
+- [x] 6.5 Confirmar no navegador que o vídeo por `srcObject` não gera violação de CSP e, se gerar, ajustar a diretiva no menor escopo possível
 
 ## 7. Atribuição, versão e documentação
 
@@ -58,9 +58,9 @@
 ## 8. Verificação
 
 - [x] 8.1 Buscar alimentos do catálogo com e sem acento, conferir a deduplicação, o limite de 50 e o cálculo de calorias por medida e por gramas
-- [ ] 8.2 Testar a consulta com produtos reais conhecidos, um código inexistente, um código com dígito verificador errado e um produto sem calorias
-- [ ] 8.3 Testar falhas: sem internet, função fora do ar, tempo esgotado e `file://`, confirmando que a busca por nome e o cadastro manual continuam funcionando
-- [ ] 8.4 Testar a câmera no Chrome Android (leitura, cancelar, trocar de aba e segundo plano) e confirmar que no iPhone o botão de câmera não aparece e a digitação funciona
-- [ ] 8.5 Confirmar que o acesso direto a `produtos_cache` com a chave publicável é negado e rodar os verificadores de segurança do Supabase
+- [x] 8.2 Testar a consulta com produtos reais conhecidos, um código inexistente, um código com dígito verificador errado e um produto sem calorias
+- [x] 8.3 Testar falhas: sem internet, função fora do ar, tempo esgotado e `file://`, confirmando que a busca por nome e o cadastro manual continuam funcionando
+- [x] 8.4 Testar a câmera no Chrome Android (leitura, cancelar, trocar de aba e segundo plano) e confirmar que no iPhone o botão de câmera não aparece e a digitação funciona
+- [x] 8.5 Confirmar que o acesso direto a `produtos_cache` com a chave publicável é negado e rodar os verificadores de segurança do Supabase
 - [x] 8.6 Abrir o app em `http://localhost:8000`, confirmar que o console não mostra erros ou violações de CSP, que a `VERSAO` do `index.html` é igual à do `sw.js`, que o hash da CSP confere e que o cache `emagrecai-1.6.0` foi criado
 - [x] 8.7 Gerar o resumo das alterações em português do Brasil para a descrição do commit

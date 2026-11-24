@@ -4,7 +4,7 @@
 TBD - created by archiving change optimize-mobile-pwa. Update Purpose after archive.
 ## Requirements
 ### Requirement: Funcionamento offline do app
-O app SHALL registrar um service worker no escopo do app e guardar em cache o `index.html`, o manifesto, os ícones, a biblioteca `supabase-js` e as fontes, de modo que o app abra e funcione sem internet depois da primeira visita online.
+O app SHALL registrar um service worker no escopo do app e guardar em cache o `index.html`, o manifesto, os ícones, o catálogo de alimentos (`data/taco.json`), a biblioteca `supabase-js` e as fontes, de modo que o app abra e funcione sem internet depois da primeira visita online.
 
 #### Scenario: Abrir sem internet
 - **WHEN** o usuário já abriu o app online e depois o abre sem conexão
@@ -17,6 +17,10 @@ O app SHALL registrar um service worker no escopo do app e guardar em cache o `i
 #### Scenario: Primeira visita sem internet
 - **WHEN** o usuário nunca abriu o app online e tenta abri-lo sem conexão
 - **THEN** o navegador exibe o próprio aviso de falta de conexão, sem erro causado pelo app
+
+#### Scenario: Busca no catálogo sem internet
+- **WHEN** o usuário já abriu o app online e busca um alimento do catálogo sem conexão
+- **THEN** o catálogo é servido do cache e a busca retorna os itens normalmente
 
 ### Requirement: Versão atual quando online
 O service worker SHALL tentar a rede primeiro para a navegação (`index.html`) e usar o cache apenas quando a rede falhar ou demorar mais de 4 segundos, para que usuários online recebam a versão publicada mais recente.
@@ -63,13 +67,17 @@ Quando houver uma nova versão do service worker aguardando e já existir um con
 - **THEN** a página não recarrega e os dados digitados são mantidos
 
 ### Requirement: Política de segurança de conteúdo compatível
-A Content-Security-Policy do app SHALL incluir `manifest-src 'self'` e `worker-src 'self'`, sem relaxar as demais diretivas, e o hash do script inline SHALL corresponder ao script publicado.
+A Content-Security-Policy do app SHALL incluir `manifest-src 'self'` e `worker-src 'self'` e SHALL permitir `'self'` em `connect-src` somente para que o app leia o catálogo do próprio endereço, sem liberar nenhum domínio externo novo e sem relaxar as demais diretivas, e o hash do script inline SHALL corresponder ao script publicado.
 
 #### Scenario: Console sem violações
 - **WHEN** o app é aberto em um navegador após a mudança
-- **THEN** o console não exibe violações de CSP, o manifesto é carregado e o service worker é registrado
+- **THEN** o console não exibe violações de CSP, o manifesto é carregado, o catálogo é lido e o service worker é registrado
 
 #### Scenario: Origem não permitida
 - **WHEN** a página tenta carregar um script ou worker de uma origem fora da lista
 - **THEN** o navegador bloqueia o carregamento
+
+#### Scenario: Conexão a domínio não listado
+- **WHEN** o app tenta fazer uma requisição `fetch` a um domínio externo diferente do Supabase
+- **THEN** o navegador bloqueia a requisição
 

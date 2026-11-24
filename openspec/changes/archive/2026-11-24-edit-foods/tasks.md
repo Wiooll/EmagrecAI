@@ -22,7 +22,7 @@
 
 ## 4. Verificação
 
-- [ ] 4.1 Abrir em `http://localhost:8000`: console sem erros e cache `emagrecai-1.5.0` criado
+- [x] 4.1 Abrir em `http://localhost:8000`: console sem erros e cache `emagrecai-1.5.0` criado
 - [x] 4.2 Testar editar quantidade (unidade e gramas), valor inválido e totais do dia
 - [x] 4.3 Testar editar alimento personalizado e confirmar que lançamentos antigos ficam iguais
 - [x] 4.4 Testar logado (com e sem internet, conferindo a sincronização sem duplicata) e como visitante

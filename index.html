@@ -11,7 +11,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="EmagrecAI">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-HuSGQoBO90Xg5WUry+/+Ei4ihYHP5wpTmr7QscKu/g8=' https://cdn.jsdelivr.net; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://*.googleusercontent.com; connect-src 'self' https://sclzuaoqxjstanugvyyq.supabase.co; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-AkMoEADNLeM1yvQuR8KZwbmHarn/hQDolMo/V1O3biI=' https://cdn.jsdelivr.net; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://*.googleusercontent.com; connect-src 'self' https://sclzuaoqxjstanugvyyq.supabase.co; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
 <title>EmagrecAI – Diário nutricional</title>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
@@ -165,7 +165,7 @@ const def=()=>({p:{sex:"f",age:30,h:165,w:70,tw:65,act:1.375,goal:"lose",kcal:18
    A chave publicável é pública por natureza; a proteção dos dados é feita por RLS no banco. */
 const SUPABASE_URL="https://sclzuaoqxjstanugvyyq.supabase.co";
 const SUPABASE_KEY="sb_publishable_slijF86mJygHkuv2qnsY-g_RawQNbii";
-const VERSAO="1.7.0";
+const VERSAO="1.8.0";
 const lsGet=k=>{try{return localStorage.getItem(k)}catch(e){return null}};
 const lsSet=(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}};
 const lsDel=k=>{try{localStorage.removeItem(k)}catch(e){}};
@@ -468,7 +468,7 @@ function diary(){
   const d=S.log[k]||{};
   MEALS.forEach(([id,nm])=>{
     const es=d[id]||[],mk=es.reduce((a,e)=>a+e.k,0);
-    h+=`<div class="card"><div class="meal-h"><h3>${nm}<small>${fmt(mk)} kcal</small></h3><button class="add" data-a="open" data-m="${id}" aria-label="Adicionar em ${nm}">+</button></div>`;
+    h+=`<div class="card"><div class="meal-h"><h3>${nm}<small>${fmt(mk)} kcal</small></h3><div style="display:flex;align-items:center;gap:8px">${es.length?`<button class="sec btn" data-a="rep" data-m="${id}" style="width:auto;padding:6px 12px" aria-label="Repetir ${nm}">Repetir</button>`:""}<button class="add" data-a="open" data-m="${id}" aria-label="Adicionar em ${nm}">+</button></div></div>`;
     h+=es.length?es.map((e,i)=>`<div class="ent"><div><p class="n">${esc(e.n)}</p><p class="d">${e.q?esc(e.q)+" · ":""}${fmt(e.g)} g · C ${f1(e.c)} · P ${f1(e.p)} · G ${f1(e.f)}</p></div><div style="display:flex;align-items:center;gap:4px"><span class="k">${fmt(e.k)}</span>${e.g>0?`<button class="del" data-a="edit" data-m="${id}" data-i="${i}" aria-label="Editar ${esc(e.n)}">✎</button>`:""}<button class="del" data-a="del" data-m="${id}" data-i="${i}" aria-label="Remover ${esc(e.n)}">×</button></div></div>`).join(""):`<p class="empty">Nada registrado. Toque em + para adicionar.</p>`;
     h+=`</div>`;
   });
@@ -673,7 +673,24 @@ async function camIniciar(){
 document.addEventListener("visibilitychange",()=>{if(document.hidden)camParar()});
 function openSheet(m){sh={m,tab:"buscar",food:null};drawSheet()}
 function closeSheet(){camParar();sh=null;$("#sheet").hidden=true;$("#sheet").innerHTML=""}
+/* Repetir refeição: copia os itens de uma refeição para outra refeição, no mesmo dia ou em outro. */
+const dv=v=>typeof v==="string"&&DAY.test(v)&&key(new Date(+v.slice(0,4),+v.slice(5,7)-1,+v.slice(8,10)))===v;
+const dBr=v=>v.split("-").reverse().join("/");
+function drawRep(){
+  const el=$("#sheet");el.hidden=false;
+  const k=sh.k,n=day(k)[sh.m].length,mn=MEALS.find(x=>x[0]===sh.m)[1],dn=MEALS.find(x=>x[0]===sh.dm)[1],px=new Date(k+"T00:00:00");px.setDate(px.getDate()+1);
+  const prox=key(px),igual=sh.dm===sh.m&&sh.dk===k,on=c=>c?"on":"";
+  const ms=MEALS.map(([id,nm])=>`<button data-a="repm" data-m="${id}" class="${on(sh.dm===id)}" style="flex:1 1 45%">${nm}</button>`).join("");
+  el.innerHTML=`<div class="sheet" role="dialog" aria-label="Repetir refeição"><div class="hd"><h2 style="margin:0">Repetir ${mn.toLowerCase()}</h2><button class="rnd" data-a="close" aria-label="Fechar">×</button></div>
+  <p class="note" style="margin:0 0 12px">${n} ${n===1?"item será copiado":"itens serão copiados"} para:</p>
+  <label>Refeição</label><div class="tabs" style="flex-wrap:wrap">${ms}</div>
+  <label>Dia</label><div class="tabs"><button data-a="repd" data-d="${k}" class="${on(sh.dk===k)}">Este dia</button><button data-a="repd" data-d="${prox}" class="${on(sh.dk===prox)}">Dia seguinte</button></div>
+  <div class="field"><label for="rd">Ou escolha uma data</label><input id="rd" type="date" value="${sh.dk}"></div>
+  <p class="note" style="margin:0 0 10px" aria-live="polite">${igual?"Escolha outra refeição ou outro dia.":`Destino: ${dn}, ${dBr(sh.dk)}.`}</p>
+  <button class="btn" data-a="repcopiar"${igual?" disabled":""}>Copiar</button></div>`;
+}
 function drawSheet(){
+  if(sh.rep){drawRep();return}
   camParar();const el=$("#sheet");el.hidden=false;const mn=MEALS.find(x=>x[0]===sh.m)[1];
   let b="";const ef=sh.ef||null,ev=(x,i)=>ef?esc(String(x)):"",eu=ef?ud(ef):null;
   if(sh.food){const f=sh.food,u=ud(f),m=u[2]/100;b=`<button class="sec btn" data-a="${sh.edit!=null?"close":"back"}" style="width:auto;padding:6px 12px;margin-bottom:12px">‹ Voltar</button><h3>${esc(f.n)}</h3><p class="note" style="margin:2px 0 12px">1 ${u[0]} (${u[2]} g): ${fmt(f.k*m)} kcal · C ${f1(f.c*m)} · P ${f1(f.p*m)} · G ${f1(f.f*m)}</p><div class="grid2"><div><label>Quantidade</label><input id="gr" type="number" inputmode="decimal" step="any" value="${sh.qv!=null?sh.qv:1}"></div><div><label>Medida</label><select id="un"><option value="u">${esc(u[1])}</option><option value="g"${sh.un==="g"?" selected":""}>gramas</option></select></div></div><div class="pv" id="pv"></div>${sh.edit!=null?`<button class="btn" data-a="saveedit">Salvar alterações</button>`:`<button class="btn" data-a="addfood">Adicionar ao ${mn.toLowerCase()}</button>`}`}
@@ -696,6 +713,7 @@ function list(q){
 }
 function pv(){const f=sh.food,g=grams(),r=g/100;$("#pv").innerHTML=[["kcal",f.k*r],["Carb.",f.c*r],["Prot.",f.p*r],["Gord.",f.f*r]].map(x=>`<div><b>${x[0]==="kcal"?fmt(x[1]):f1(x[1])}</b><small>${x[0]}</small></div>`).join("")}
 document.addEventListener("input",e=>{if(e.target.id==="q")list(e.target.value);if(e.target.id==="un")$("#gr").value=e.target.value==="u"?1:ud(sh.food)[2];if(e.target.id==="gr"||e.target.id==="un")pv()});
+document.addEventListener("change",e=>{if(e.target.id==="rd"&&sh&&sh.rep&&dv(e.target.value)){sh.dk=e.target.value;drawRep()}});
 document.addEventListener("click",e=>{
   if(e.target.id==="sheet"){closeSheet();return}
   const t=e.target.closest("[data-a]");if(!t)return;const a=t.dataset.a,k=key(cur);
@@ -704,6 +722,15 @@ document.addEventListener("click",e=>{
   else if(a==="mes"){const n=mesVizinho(+t.dataset.d);if(n){mes=n;render()}}
   else if(a==="open")openSheet(t.dataset.m);
   else if(a==="close")closeSheet();
+  else if(a==="rep"){sh={rep:true,m:t.dataset.m,dm:t.dataset.m,k,dk:k};drawRep()}
+  else if(a==="repm"){if(MEALS.some(x=>x[0]===t.dataset.m)){sh.dm=t.dataset.m;drawRep()}}
+  else if(a==="repd"){if(dv(t.dataset.d)){sh.dk=t.dataset.d;drawRep()}}
+  else if(a==="repcopiar"){
+    if(!sh||!sh.rep||!dv(sh.dk)||!MEALS.some(x=>x[0]===sh.dm)||(sh.dm===sh.m&&sh.dk===sh.k))return;
+    const dm=sh.dm,dk=sh.dk,src=day(sh.k)[sh.m].slice(),dest=day(dk)[dm],nm=MEALS.find(x=>x[0]===dm)[1];
+    src.forEach(o=>{const e={...o,id:uid()};dest.push(e);commit("entry.add",()=>rowEntry(dm,dk,e))});
+    closeSheet();render();toast(`${src.length} ${src.length===1?"item copiado":"itens copiados"} para ${nm}, ${dBr(dk)}.`);
+  }
   else if(a==="tab"){sh.tab=t.dataset.t;sh.ef=null;drawSheet()}
   else if(a==="bcbuscar")bcBuscar();
   else if(a==="bcscan")camIniciar();

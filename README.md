@@ -2,7 +2,7 @@
 
 Diário alimentar simples para acompanhar calorias, macronutrientes, água e peso. Funciona em um único arquivo HTML, sem build. Com login Google, os dados ficam em um banco Supabase e sincronizam entre dispositivos.
 
-**Versão atual:** 1.7.0
+**Versão atual:** 1.8.0
 
 ## Funcionalidades
 
@@ -20,6 +20,7 @@ Diário alimentar simples para acompanhar calorias, macronutrientes, água e pes
 - **Novo na 1.2.1:** correções de segurança. Ao sair da conta, o cache local, a fila de pendências e a recusa de importação são apagados do navegador. O app passou a ter Content-Security-Policy, e o banco teve os privilégios reduzidos ao mínimo.
 
 - **Novo na 1.3.0:** layout otimizado para celular (botões com área de toque de 44 px, campos sem zoom automático no iOS, telas a partir de 320 px, folha de adicionar alimento ajustada ao teclado virtual) e instalação como app (PWA), com ícone na tela inicial, tela cheia e uso sem internet.
+- **Novo na 1.8.0:** repetir uma refeição. Cada refeição com alimentos no diário ganhou o botão "Repetir", que copia todos os itens para outra refeição do mesmo dia ou para uma refeição de outro dia ("Este dia", "Dia seguinte" ou uma data escolhida). Os itens que já existem no destino são mantidos, e a cópia é sincronizada como qualquer outro alimento adicionado.
 - **Novo na 1.7.0:** catálogo ampliado e código de barras. A busca por nome passou a incluir cerca de 580 alimentos da TACO (funciona sem internet e sem login), ignorando acentos e exigindo todas as palavras digitadas (máximo de 50 resultados). A nova aba "Código" consulta um produto de mercado pelo número do código de barras, digitado ou lido pela câmera (botão "Escanear com a câmera", só em navegadores com `BarcodeDetector`, como Chrome e Edge no Android e no computador; no iPhone, digite o número). Os valores vêm do Open Food Facts por uma função do Supabase, são conferidos antes de aparecer e, se o produto não existir ou estiver incompleto, o app oferece "Cadastrar este produto". A câmera só liga ao tocar no botão e nenhuma imagem é guardada ou enviada. Veja "Catálogo TACO e código de barras" abaixo.
 - **Novo na 1.6.0:** lembretes. No Perfil, o card "Lembretes" permite escolher os horários de café da manhã, almoço, lanche e jantar, o dia e o horário da pesagem semanal e, se quiser, lembretes de água (início, fim e intervalo). O botão "Adicionar ao calendário" gera um arquivo `.ics` com eventos recorrentes e alarme, que funciona com o app fechado em Android, iPhone e computador. Na aba Diário, um aviso mostra a refeição ou a pesagem pendente mais recente (só para hoje) e pode ser dispensado por refeição e por dia. Os horários e as dispensas ficam só no `localStorage` do aparelho, sem mudanças no banco. O alarme depende das notificações do aplicativo de calendário, e é preciso apagar os lembretes antigos do calendário antes de importar o arquivo de novo.
 - **Novo na 1.5.0:** edição de alimentos. No Diário, o botão ✎ de cada lançamento permite corrigir a quantidade e a medida (unidade ou gramas), com calorias e macros recalculados. Na busca, o botão "Editar" dos alimentos que você cadastrou permite corrigir nome, unidade, peso da unidade e valores por 100 g. Editar um alimento cadastrado não altera lançamentos antigos. As alterações usam a fila de sincronização existente, sem mudanças no banco.
@@ -112,6 +113,7 @@ A fonte *Plus Jakarta Sans* é carregada do Google Fonts e a biblioteca `@supaba
 As informações nutricionais são aproximadas e não substituem orientação profissional. Para metas clínicas, consulte um nutricionista.
 
 ## Histórico de versões
+- **1.8.0**: botão "Repetir" nas refeições do diário, para copiar os alimentos para outra refeição do mesmo dia ou de outro dia. O hash da CSP foi atualizado.
 - **1.7.0**: catálogo TACO na busca por nome (cerca de 580 alimentos, offline), aba "Código" com consulta por código de barras (Open Food Facts via função do Supabase) e leitura pela câmera onde houver suporte. A CSP ganhou `'self'` em `connect-src` e o hash foi atualizado.
 - **1.6.0**: lembretes de refeição, pesagem semanal e água (opcional) com horários editáveis, exportação para o calendário em arquivo `.ics` e aviso de pendência na aba Diário, com dispensa por refeição e por dia. O hash da CSP foi atualizado por causa da mudança no script inline.
 - **1.5.0**: edição de alimentos: quantidade de um lançamento do diário e alimentos cadastrados pelo usuário. O hash da CSP foi atualizado por causa da mudança no script inline.

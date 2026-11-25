@@ -11,7 +11,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="EmagrecAI">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-KI240tmdnXUXydRLltRyVEHZ3OQigUWCcjOf52Lwqvo=' https://cdn.jsdelivr.net; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://*.googleusercontent.com; connect-src 'self' https://sclzuaoqxjstanugvyyq.supabase.co; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-YNMjB2N4U9+gKdwg9536P3wEGHDCu41QwWWdIWldV9A=' https://cdn.jsdelivr.net; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://*.googleusercontent.com; connect-src 'self' https://sclzuaoqxjstanugvyyq.supabase.co; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
 <title>EmagrecAI – Diário nutricional</title>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
@@ -166,7 +166,7 @@ const def=()=>({p:{sex:"f",age:30,h:165,w:70,tw:65,act:1.375,goal:"lose",kcal:18
    A chave publicável é pública por natureza; a proteção dos dados é feita por RLS no banco. */
 const SUPABASE_URL="https://sclzuaoqxjstanugvyyq.supabase.co";
 const SUPABASE_KEY="sb_publishable_slijF86mJygHkuv2qnsY-g_RawQNbii";
-const VERSAO="1.10.0";
+const VERSAO="1.11.0";
 const lsGet=k=>{try{return localStorage.getItem(k)}catch(e){return null}};
 const lsSet=(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}};
 const lsDel=k=>{try{localStorage.removeItem(k)}catch(e){}};
@@ -354,7 +354,36 @@ async function logout(){
   }
   try{await sb.auth.signOut({scope:"local"})}catch(e){}
   if(U)leave();
-  if(me)["pratocheio:"+me,"pratocheio:fila:"+me,"pratocheio:recusou:"+me].forEach(lsDel);
+  limparContaLocal(me);
+}
+const limparContaLocal=me=>{if(me)["pratocheio:"+me,"pratocheio:fila:"+me,"pratocheio:recusou:"+me].forEach(lsDel)};
+/* Excluir conta: a função "excluir-conta" do Supabase apaga o usuário do token e, em cascata, os dados dele.
+   Os dados locais só são apagados depois da confirmação do servidor. Os dados do visitante não são tocados. */
+const EXCLUIR_URL=SUPABASE_URL+"/functions/v1/excluir-conta";
+const ERROS_EXCLUIR={nao_autenticado:"Sua sessão expirou. Saia, entre de novo e tente outra vez.",origem_nao_permitida:"Este endereço do app não pode excluir contas.",limite_excedido:"Muitas tentativas seguidas. Aguarde um minuto e tente de novo.",servico_indisponivel:"Não foi possível excluir a conta agora. Tente mais tarde."};
+let excluindo=false;
+async function excluirConta(){
+  if(!U||!sb||excluindo)return;
+  if(!navigator.onLine){toast("Para excluir a conta, conecte-se à internet.");return}
+  const r=prompt("Excluir a conta apaga, de forma definitiva, a sua conta e todos os dados da nuvem: perfil, alimentos lançados, água, peso e alimentos cadastrados. Não dá para desfazer.\n\nA autorização do app na sua conta Google não é revogada, e os dados do modo visitante deste navegador não são apagados.\n\nDica: cancele e use \"Exportar dados (CSV)\" antes.\n\nPara confirmar, digite EXCLUIR.");
+  if(r===null||r.trim()!=="EXCLUIR"){toast("Exclusão cancelada. Nada foi apagado.");return}
+  excluindo=true;const me=U.id,bt=()=>$('[data-a="delconta"]');
+  if(bt())bt().disabled=true;
+  try{
+    const{data}=await sb.auth.getSession(),ses=data&&data.session;
+    if(!ses||!ses.access_token||ses.user.id!==me){toast(ERROS_EXCLUIR.nao_autenticado);return}
+    let res,j=null;
+    try{res=await fetch(EXCLUIR_URL,{method:"POST",headers:{"Content-Type":"application/json",apikey:SUPABASE_KEY,Authorization:"Bearer "+ses.access_token},body:"{}",signal:typeof AbortSignal.timeout==="function"?AbortSignal.timeout(15000):undefined})}
+    catch(e){toast("Não foi possível excluir a conta agora. Verifique a conexão e tente de novo. Se continuar, a exclusão pode estar indisponível.");return}
+    try{j=await res.json()}catch(e){}
+    if(res.status===404&&!(j&&j.erro)){toast("A exclusão de conta está indisponível agora.");return}
+    if(!res.ok||!j||j.ok!==true){toast(ERROS_EXCLUIR[j&&j.erro]||ERROS_EXCLUIR.servico_indisponivel);return}
+    writeQ([],me);
+    try{await sb.auth.signOut({scope:"local"})}catch(e){}
+    if(U)leave();
+    limparContaLocal(me);
+    toast("Conta excluída. Os dados da nuvem foram apagados.");
+  }finally{excluindo=false;if(bt())bt().disabled=false}
 }
 function resetAll(){S=def();commit("data.reset",()=>({user_id:U.id}))}
 (function(){const q=new URLSearchParams(location.search),h=new URLSearchParams(location.hash.slice(1));if(q.get("error")||h.get("error")){loginErr=true;history.replaceState(null,"",location.pathname)}})();
@@ -431,16 +460,7 @@ function icsTexto(L){
 }
 async function lembExportar(){
   if(lembInvalida(LEMB))return;
-  const txt=icsTexto(LEMB),nome="emagrecai-lembretes.ics";
-  try{
-    const f=new File([txt],nome,{type:"text/calendar"});
-    if(navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share({files:[f],title:"Lembretes do EmagrecAI"});return}
-  }catch(e){if(e&&e.name==="AbortError")return}
-  try{
-    const u=URL.createObjectURL(new Blob([txt],{type:"text/calendar"})),a=document.createElement("a");
-    a.href=u;a.download=nome;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),1000);
-    toast("Arquivo gerado. Abra-o para adicionar os lembretes ao calendário.");
-  }catch(e){toast("Não foi possível gerar o arquivo de lembretes.")}
+  await entregarArquivo(icsTexto(LEMB),"emagrecai-lembretes.ics","text/calendar","Lembretes do EmagrecAI","Arquivo gerado. Abra-o para adicionar os lembretes ao calendário.","Não foi possível gerar o arquivo de lembretes.");
 }
 /* Aviso de pendência: só para hoje; a dispensa vale por refeição (ou pesagem) e só no dia em que foi feita. */
 function avisosHoje(){let o=null;try{o=JSON.parse(lsGet(AVISO_KEY))}catch(e){}const l=o&&typeof o==="object"&&Array.isArray(o[key(new Date())])?o[key(new Date())]:[];return l.filter(x=>typeof x==="string")}
@@ -460,6 +480,120 @@ function avisoHtml(){
   if(key(cur)!==key(new Date()))return"";
   const p=avisoPendente();if(!p)return"";
   return`<div class="card aviso" role="status"><p>${esc(p.t)}</p><div><button class="btn" data-a="avisook" data-id="${p.id}">Registrar</button><button class="del" data-a="avisono" data-id="${p.id}" aria-label="Dispensar aviso">×</button></div></div>`;
+}
+/* ===== Favoritos e recentes =====
+   Favoritos: só neste aparelho (localStorage), com cópia dos valores do alimento. Nada vai ao Supabase.
+   Recentes: calculados a partir do diário (S.log); nada é gravado. */
+const FAV_KEY="pratocheio:favoritos",FAV_MAX=50,REC_MAX=15;
+function favSan(x){
+  if(!x||typeof x.n!=="string"||!x.n.trim()||!numOk(x.k,20000)||!numOk(x.c,1000)||!numOk(x.p,1000)||!numOk(x.f,1000))return null;
+  const f={n:x.n.trim().slice(0,120),k:x.k,c:x.c,p:x.p,f:x.f};
+  if(Array.isArray(x.u)&&x.u.length===3&&typeof x.u[0]==="string"&&typeof x.u[1]==="string"&&typeof x.u[2]==="number"&&x.u[2]>0&&x.u[2]<=100000)f.u=[x.u[0].slice(0,40),x.u[1].slice(0,40),x.u[2]];
+  return f;
+}
+function favLer(){
+  let o=null;try{o=JSON.parse(lsGet(FAV_KEY))}catch(e){}
+  if(!Array.isArray(o))return[];
+  const vistos=new Set();
+  return o.map(favSan).filter(f=>{if(!f)return false;const n=norm(f.n);if(vistos.has(n))return false;vistos.add(n);return true}).slice(0,FAV_MAX);
+}
+const favEh=f=>{const n=norm(f.n);return favLer().some(x=>norm(x.n)===n)};
+function favAlternar(f){
+  const n=norm(f.n),l=favLer(),i=l.findIndex(x=>norm(x.n)===n);
+  if(i>=0)l.splice(i,1);
+  else{const c=favSan({n:f.n,k:f.k,c:f.c,p:f.p,f:f.f,u:ud(f)});if(!c)return;l.unshift(c)}
+  lsSet(FAV_KEY,JSON.stringify(l.slice(0,FAV_MAX)));
+}
+function recentes(excluir){
+  const ks=Object.keys(S.log).filter(k=>DAY.test(k)).sort().reverse(),vistos=new Set(excluir),ms=MEALS.map(x=>x[0]).reverse(),out=[];
+  const base=[...S.custom,...FOODS,...(TACO||[])];
+  for(const k of ks){
+    const d=S.log[k];if(!d||typeof d!=="object")continue;
+    for(const m of ms){
+      const es=Array.isArray(d[m])?d[m]:[];
+      for(let i=es.length-1;i>=0;i--){
+        const e=es[i];
+        if(!e||typeof e.n!=="string"||!(e.g>0))continue;
+        const n=norm(e.n);if(vistos.has(n))continue;
+        const b=base.find(x=>x.n===e.n),r=100/e.g,f=favSan({n:e.n,k:e.k*r,c:e.c*r,p:e.p*r,f:e.f*r,u:b?ud(b):["porção","porções",100]});
+        if(!f)continue;
+        vistos.add(n);out.push(f);if(out.length>=REC_MAX)return out;
+      }
+    }
+  }
+  return out;
+}
+/* ===== Constância e resumo da semana =====
+   Calculados em S, sem gravar nada. Dia registrado = dia com calorias lançadas (mesma regra do resumo mensal). */
+const diaDe=k=>new Date(+k.slice(0,4),+k.slice(5,7)-1,+k.slice(8,10));
+function constancia(){
+  const t=new Date(),h=new Date(t.getFullYear(),t.getMonth(),t.getDate());
+  const ks=Object.keys(S.log).filter(k=>DAY.test(k)&&tot(k).k>0).sort(),reg=new Set(ks);
+  const d=new Date(h);if(!reg.has(key(d)))d.setDate(d.getDate()-1);
+  let atual=0;while(reg.has(key(d))){atual++;d.setDate(d.getDate()-1)}
+  let melhor=0,seq=0,ant=null;
+  for(const k of ks){const x=diaDe(k);seq=ant&&Math.round((x-ant)/864e5)===1?seq+1:1;ant=x;if(seq>melhor)melhor=seq}
+  let sem=0;for(let i=0;i<7;i++)if(reg.has(key(new Date(h.getFullYear(),h.getMonth(),h.getDate()-i))))sem++;
+  return{atual,melhor,sem};
+}
+function janela7(fim){
+  const r={dk:0,sk:0,naMeta:0,pesos:[],da:0,aguaOk:0};
+  for(let i=6;i>=0;i--){
+    const k=key(new Date(fim.getFullYear(),fim.getMonth(),fim.getDate()-i)),kc=tot(k).k,w=S.weights[k],ml=S.water[k];
+    if(kc>0){r.dk++;r.sk+=kc;if(kc<=S.p.kcal)r.naMeta++}
+    if(Number.isFinite(w)&&w>0)r.pesos.push(w);
+    if(Number.isFinite(ml)&&ml>0){r.da++;if(ml>=S.p.wg)r.aguaOk++}
+  }
+  r.mk=r.dk?r.sk/r.dk:0;
+  r.dp=r.pesos.length>1?r.pesos[r.pesos.length-1]-r.pesos[0]:null;
+  return r;
+}
+function constanciaCard(){
+  const c=constancia(),dias=n=>n+(n===1?" dia":" dias");
+  return`<div class="card"><h2>Constância</h2>${kv([[dias(c.atual),"Sequência atual"],[dias(c.melhor),"Melhor sequência"],[c.sem+" de 7","Últimos 7 dias"]])}<p class="note">${c.melhor?"Um dia conta como registrado quando tem alimentos lançados.":"Registre uma refeição para começar a sua sequência."}</p></div>`;
+}
+function resumoSemanaCard(){
+  const t=new Date(),a=janela7(t),p=janela7(new Date(t.getFullYear(),t.getMonth(),t.getDate()-7));
+  const cab=`<div class="card"><h2>Resumo da semana</h2>`;
+  if(!a.dk&&!a.pesos.length&&!a.da)return cab+`<p class="empty">Registre refeições para ver o resumo dos últimos 7 dias.</p></div>`;
+  const l1=[[a.dk?fmt(a.mk):"—","Média (kcal/dia)"],[a.dk,"Dias registrados"],[a.naMeta,"Dias na meta"]];
+  const l2=[];if(a.dp!=null)l2.push([sg(a.dp,f1),"Variação (kg)"]);l2.push([a.aguaOk,"Dias com a meta de água"]);
+  const c=[];
+  if(a.dk&&p.dk)c.push(`${sg(a.mk-p.mk,fmt)} kcal na média diária em relação aos 7 dias anteriores.`);
+  if(a.dp!=null&&p.dp!=null)c.push(`Variação de peso: ${sg(a.dp,f1)} kg, contra ${sg(p.dp,f1)} kg nos 7 dias anteriores.`);
+  return cab+kv(l1)+kv(l2)+c.map(x=>`<p class="note">${x}</p>`).join("")+`<p class="note">Considera os últimos 7 dias, incluindo hoje. Dias na meta e dias com a meta de água usam as metas atuais do perfil.</p></div>`;
+}
+/* ===== Exportar dados (CSV) =====
+   Gera um arquivo único a partir de S, sem rede. Campos de texto entre aspas e com prefixo contra fórmulas de planilha. */
+const csvTxt=s=>{s=String(s==null?"":s);if(/^[=+\-@\t\r]/.test(s))s="'"+s;return'"'+s.replace(/"/g,'""')+'"'};
+const csvNum=n=>Number.isFinite(+n)&&n!==""&&n!=null?String(Math.round(+n*100)/100):"";
+function csvTexto(){
+  const L=[],nome=Object.fromEntries(MEALS),v="";
+  for(const k in S.log){
+    if(!DAY.test(k)||!S.log[k]||typeof S.log[k]!=="object")continue;
+    for(const[m]of MEALS){const a=S.log[k][m];if(Array.isArray(a))a.forEach(e=>{if(e&&typeof e==="object")L.push([k,0,[csvTxt(k),csvTxt("alimento"),csvTxt(nome[m]),csvTxt(e.n),csvTxt(e.q),csvNum(e.g),csvNum(e.k),csvNum(e.c),csvNum(e.p),csvNum(e.f),v,v]])})}
+  }
+  for(const k in S.water)if(DAY.test(k)&&S.water[k]>0)L.push([k,1,[csvTxt(k),csvTxt("agua"),csvTxt(""),csvTxt(""),csvTxt(""),v,v,v,v,v,csvNum(S.water[k]),v]]);
+  for(const k in S.weights)if(DAY.test(k)&&S.weights[k]>0)L.push([k,2,[csvTxt(k),csvTxt("peso"),csvTxt(""),csvTxt(""),csvTxt(""),v,v,v,v,v,v,csvNum(S.weights[k])]]);
+  if(!L.length)return null;
+  L.sort((x,y)=>x[0]<y[0]?-1:x[0]>y[0]?1:x[1]-y[1]);
+  return"\ufeff"+["data","tipo","refeicao","item","porcao","gramas","kcal","carboidratos_g","proteinas_g","gorduras_g","agua_ml","peso_kg"].join(";")+"\r\n"+L.map(x=>x[2].join(";")).join("\r\n")+"\r\n";
+}
+/* Entrega um arquivo: compartilhamento do sistema quando houver suporte; senão, download. */
+async function entregarArquivo(txt,nome,tipo,titulo,msgOk,msgErro){
+  try{
+    const f=new File([txt],nome,{type:tipo});
+    if(navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share({files:[f],title:titulo});return}
+  }catch(e){if(e&&e.name==="AbortError")return}
+  try{
+    const u=URL.createObjectURL(new Blob([txt],{type:tipo})),a=document.createElement("a");
+    a.href=u;a.download=nome;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),1000);
+    toast(msgOk);
+  }catch(e){toast(msgErro)}
+}
+function exportarCsv(){
+  const t=csvTexto();if(!t){toast("Não há dados para exportar.");return}
+  entregarArquivo(t,"emagrecai-"+key(new Date())+".csv","text/csv;charset=utf-8","Dados do EmagrecAI","Arquivo gerado. Abra-o em uma planilha.","Não foi possível gerar o arquivo.");
 }
 function diary(){
   const k=key(cur),t=tot(k),P=S.p,g=P.kcal,rem=g-t.k,over=rem<0,R=54,C=2*Math.PI*R;
@@ -557,7 +691,7 @@ function progress(){
   <div class="card"><h2>Peso</h2><div class="grid2" style="margin-bottom:8px"><div><label>Peso de hoje (kg)</label><input id="wt" type="number" step="0.1" inputmode="decimal" value="${S.weights[k]||""}" placeholder="${f1(last)}"></div><div style="align-self:end"><button class="btn" data-a="savew">Salvar peso</button></div></div>
   <div class="sum"><span>Atual <b style="color:var(--ink)">${f1(last)} kg</b></span><span>Variação <b style="color:var(--ink)">${diff>0?"+":""}${f1(diff)} kg</b></span><span>Meta <b style="color:var(--ink)">${f1(P.tw)} kg</b></span></div>${chart}</div>
   <div class="card"><h2>Calorias na semana</h2>${bars}<p class="note">${avg.length?`Média nos dias registrados: ${fmt(av)} kcal. Linha tracejada: sua meta de ${fmt(P.kcal)} kcal.`:"Registre refeições para ver sua média semanal."}</p></div>
-  ${evolucaoMensal()}`;
+  ${constanciaCard()}${resumoSemanaCard()}${evolucaoMensal()}`;
 }
 function profile(){
   const P=S.p,o=(v,l,c)=>`<option value="${v}" ${String(c)===String(v)?"selected":""}>${l}</option>`;
@@ -570,7 +704,7 @@ function profile(){
   <div class="field"><label>Meta diária de calorias (kcal)</label><input id="pf_kcal" type="number" value="${P.kcal}"></div>
   <button class="btn sec" data-a="calc" style="margin-bottom:10px">Calcular meta sugerida</button><button class="btn" data-a="savep">Salvar perfil</button>
   <p class="note">A sugestão usa a fórmula de Mifflin-St Jeor, com 500 kcal a menos para perder peso e 300 a mais para ganhar massa. Os macros seguem a divisão 45% carboidratos, 25% proteínas e 30% gorduras. Para metas clínicas, consulte um nutricionista.</p></div>
-  ${lembCard()}<div class="card"><h2>Dados</h2><p class="note" style="margin:0 0 12px">${U?"Seus dados ficam salvos na sua conta e também neste navegador, para uso sem internet.":"Modo visitante: tudo fica salvo apenas neste navegador."}</p><button class="btn dng" data-a="reset">Apagar todos os dados</button></div>
+  ${lembCard()}<div class="card"><h2>Dados</h2><p class="note" style="margin:0 0 12px">${U?"Seus dados ficam salvos na sua conta e também neste navegador, para uso sem internet.":"Modo visitante: tudo fica salvo apenas neste navegador."}</p><button class="btn sec" data-a="exportcsv" style="margin-bottom:10px">Exportar dados (CSV)</button><button class="btn dng" data-a="reset">Apagar todos os dados</button></div>
   ${installCard()}<div class="card about"><h2>Sobre o app</h2>
   <p class="note" style="margin:0 0 12px">Quer colaborar com o desenvolvimento? A contribuição é voluntária e pode ser feita com código no GitHub ou com apoio via Pix.</p>
   <p class="lk"><label>GitHub</label><a href="${esc(GITHUB_URL)}" target="_blank" rel="noopener noreferrer">${esc(GITHUB_URL.replace("https://",""))}</a></p>
@@ -583,7 +717,7 @@ function accountCard(){
   if(U){
     const ini=U.nome.split(/\s+/).filter(Boolean).slice(0,2).map(w=>w[0]).join("").toUpperCase()||"?";
     const av=U.foto?`<img class="av" src="${esc(U.foto)}" alt="" referrerpolicy="no-referrer">`:`<div class="av" aria-hidden="true">${esc(ini)}</div>`;
-    return`<div class="card"><h2>Conta</h2><div class="acc">${av}<div><b>${esc(U.nome)}</b><p class="note" style="margin:0">${esc(U.email)}</p></div></div><p class="note" id="sync" style="margin:0 0 12px">${esc(statusText())}</p><button class="btn sec" data-a="logout">Sair</button></div>`;
+    return`<div class="card"><h2>Conta</h2><div class="acc">${av}<div><b>${esc(U.nome)}</b><p class="note" style="margin:0">${esc(U.email)}</p></div></div><p class="note" id="sync" style="margin:0 0 12px">${esc(statusText())}</p><button class="btn sec" data-a="logout">Sair</button><button class="btn dng" data-a="delconta" style="margin-top:10px">Excluir conta</button><p class="note" style="margin:10px 0 0">Excluir a conta apaga todos os seus dados da nuvem. Se quiser guardar uma cópia, use "Exportar dados (CSV)" no card Dados.</p></div>`;
   }
   const body=auth==="on"?`<p class="note" style="margin:0 0 12px">Entre para sincronizar seus dados entre dispositivos. Sem login, tudo fica salvo apenas neste navegador.</p><button class="btn gbtn" data-a="login">${GLOGO}Entrar com Google</button>`
     :auth==="off"?`<p class="note" style="margin:0">Login indisponível.${authMsg?" "+esc(authMsg):""} O app continua funcionando em modo visitante.</p>`
@@ -722,7 +856,7 @@ function drawSheet(){
   if(sh.rep){drawRep();return}
   camParar();const el=$("#sheet");el.hidden=false;const mn=MEALS.find(x=>x[0]===sh.m)[1];
   let b="";const ef=sh.ef||null,ev=(x,i)=>ef?esc(String(x)):"",eu=ef?ud(ef):null;
-  if(sh.food){const f=sh.food,u=ud(f),m=u[2]/100;b=`<button class="sec btn" data-a="${sh.edit!=null?"close":"back"}" style="width:auto;padding:6px 12px;margin-bottom:12px">‹ Voltar</button><h3>${esc(f.n)}</h3><p class="note" style="margin:2px 0 12px">1 ${u[0]} (${u[2]} g): ${fmt(f.k*m)} kcal · C ${f1(f.c*m)} · P ${f1(f.p*m)} · G ${f1(f.f*m)}</p><div class="grid2"><div><label>Quantidade</label><input id="gr" type="number" inputmode="decimal" step="any" value="${sh.qv!=null?sh.qv:1}"></div><div><label>Medida</label><select id="un"><option value="u">${esc(u[1])}</option><option value="g"${sh.un==="g"?" selected":""}>gramas</option></select></div></div><div class="pv" id="pv"></div>${sh.edit!=null?`<button class="btn" data-a="saveedit">Salvar alterações</button>`:`<button class="btn" data-a="addfood">Adicionar ao ${mn.toLowerCase()}</button>`}`}
+  if(sh.food){const f=sh.food,u=ud(f),m=u[2]/100;b=`<button class="sec btn" data-a="${sh.edit!=null?"close":"back"}" style="width:auto;padding:6px 12px;margin-bottom:12px">‹ Voltar</button>${sh.edit!=null?`<h3>${esc(f.n)}</h3>`:`<div style="display:flex;align-items:center;justify-content:space-between;gap:8px"><h3 style="margin:0">${esc(f.n)}</h3>${favEh(f)?`<button class="rnd" data-a="fav" aria-pressed="true" aria-label="Remover dos favoritos" title="Remover dos favoritos">★</button>`:`<button class="rnd" data-a="fav" aria-pressed="false" aria-label="Favoritar" title="Favoritar">☆</button>`}</div>`}<p class="note" style="margin:2px 0 12px">1 ${u[0]} (${u[2]} g): ${fmt(f.k*m)} kcal · C ${f1(f.c*m)} · P ${f1(f.p*m)} · G ${f1(f.f*m)}</p><div class="grid2"><div><label>Quantidade</label><input id="gr" type="number" inputmode="decimal" step="any" value="${sh.qv!=null?sh.qv:1}"></div><div><label>Medida</label><select id="un"><option value="u">${esc(u[1])}</option><option value="g"${sh.un==="g"?" selected":""}>gramas</option></select></div></div><div class="pv" id="pv"></div>${sh.edit!=null?`<button class="btn" data-a="saveedit">Salvar alterações</button>`:`<button class="btn" data-a="addfood">Adicionar ao ${mn.toLowerCase()}</button>`}`}
   else b=`<div class="tabs"><button data-a="tab" data-t="buscar" class="${sh.tab==="buscar"?"on":""}">Buscar</button><button data-a="tab" data-t="codigo" class="${sh.tab==="codigo"?"on":""}">Código</button><button data-a="tab" data-t="criar" class="${sh.tab==="criar"?"on":""}">Novo alimento</button></div>`+(sh.tab==="buscar"?`<input id="q" type="search" placeholder="Buscar alimento, ex.: arroz" autocomplete="off"><div class="list" id="list"></div>`:sh.tab==="codigo"?`<div class="field"><label for="bc">Número do código de barras</label><input id="bc" inputmode="numeric" autocomplete="off" placeholder="Ex.: 7891000100103"></div><p class="note" style="margin:0 0 10px">O número fica embaixo das barras, na embalagem do produto.</p><button class="btn" data-a="bcbuscar">Buscar produto</button>${CAM_OK?`<button class="btn sec bcs" data-a="bcscan">Escanear com a câmera</button>`:""}<div class="bcw" id="bcw" hidden><video id="bcvid" playsinline muted aria-label="Imagem da câmera para ler o código de barras"></video><button class="btn sec" data-a="bccancel">Cancelar</button></div><div class="note" id="bcmsg" aria-live="polite"></div>`:`<div class="field"><label>Nome</label><input id="nf_n" value="${ef?esc(ef.n):""}" placeholder="Ex.: Pão de queijo"></div><div class="grid2"><div><label>Unidade (ex.: fatia)</label><input id="nf_u" value="${ef?esc(eu[0]):""}" placeholder="unidade"></div><div><label>Peso da unidade (g)</label><input id="nf_ug" type="number" inputmode="decimal" value="${ef?ev(eu[2]):100}"></div></div><p class="note" style="margin:0 0 8px">Informe os valores nutricionais por 100 g</p><div class="grid2"><div><label>Calorias (kcal)</label><input id="nf_k" type="number" inputmode="decimal" value="${ef?ev(ef.k):""}"></div><div><label>Carboidratos (g)</label><input id="nf_c" type="number" inputmode="decimal" value="${ef?ev(ef.c):""}"></div><div><label>Proteínas (g)</label><input id="nf_p" type="number" inputmode="decimal" value="${ef?ev(ef.p):""}"></div><div><label>Gorduras (g)</label><input id="nf_f" type="number" inputmode="decimal" value="${ef?ev(ef.f):""}"></div></div><button class="btn" data-a="newfood">${ef?"Salvar alterações":"Salvar alimento"}</button>`);
   el.innerHTML=`<div class="sheet" role="dialog" aria-label="Adicionar alimento"><div class="hd"><h2 style="margin:0">${mn}</h2><button class="rnd" data-a="close" aria-label="Fechar">×</button></div>${b}</div>`;
   if(!sh.food&&sh.tab==="buscar"){list("");$("#q").focus();carregarTaco()}
@@ -731,14 +865,20 @@ function drawSheet(){
 }
 function list(q){
   const t=norm(q).split(/\s+/).filter(Boolean);let r;
-  if(!t.length)r=[...S.custom,...FOODS].slice(0,50);
-  else{
+  const sec={};
+  if(!t.length){
+    const fv=favLer(),rc=recentes(fv.map(x=>norm(x.n)));let n=0;
+    if(fv.length){sec[n]="Favoritos";n+=fv.length}
+    if(rc.length){sec[n]="Recentes";n+=rc.length}
+    if(n)sec[n]="Todos os alimentos";
+    r=[...fv,...rc,...[...S.custom,...FOODS].slice(0,50)];
+  }else{
     const pri=a=>{const o=a.map(f=>({f,n:f._n||norm(f.n)})).filter(x=>t.every(w=>x.n.includes(w)));return[...o.filter(x=>x.n.startsWith(t[0])),...o.filter(x=>!x.n.startsWith(t[0]))]},
       loc=[...pri(FOODS),...pri(S.custom)],vistos=new Set(loc.map(x=>x.n));
     r=[...loc,...(TACO?pri(TACO).filter(x=>!vistos.has(x.n)):[])].map(x=>x.f).slice(0,50);
   }
   window._r=r;const aviso=tacoSt==="erro"?`<p class="note">Catálogo ampliado indisponível</p>`:"";
-  $("#list").innerHTML=aviso+(r.length?r.map((f,i)=>{const u=ud(f),b=`<button class="food" data-a="pick" data-i="${i}"><div>${esc(f.n)}<br><span>1 ${esc(u[0])} · ${u[2]} g</span></div><b>${fmt(f.k*u[2]/100)} kcal</b></button>`;return S.custom.includes(f)?`<div style="display:flex;align-items:center">${b.replace('class="food"','class="food" style="flex:1"')}<button class="sec btn" data-a="editfood" data-i="${i}" style="width:auto;padding:6px 12px" aria-label="Editar ${esc(f.n)}">Editar</button></div>`:b}).join(""):`<p class="empty">Nenhum resultado. Use "Novo alimento" para cadastrar.</p>`);
+  $("#list").innerHTML=aviso+(r.length?r.map((f,i)=>{const u=ud(f),tit=sec[i]?`<h3 style="font-size:14px;margin:12px 0 4px">${sec[i]}</h3>`:"",b=`<button class="food" data-a="pick" data-i="${i}"><div>${esc(f.n)}<br><span>1 ${esc(u[0])} · ${u[2]} g</span></div><b>${fmt(f.k*u[2]/100)} kcal</b></button>`;return tit+(S.custom.includes(f)?`<div style="display:flex;align-items:center">${b.replace('class="food"','class="food" style="flex:1"')}<button class="sec btn" data-a="editfood" data-i="${i}" style="width:auto;padding:6px 12px" aria-label="Editar ${esc(f.n)}">Editar</button></div>`:b)}).join(""):`<p class="empty">Nenhum resultado. Use "Novo alimento" para cadastrar.</p>`);
 }
 function pv(){const f=sh.food,g=grams(),r=g/100;$("#pv").innerHTML=[["kcal",f.k*r],["Carb.",f.c*r],["Prot.",f.p*r],["Gord.",f.f*r]].map(x=>`<div><b>${x[0]==="kcal"?fmt(x[1]):f1(x[1])}</b><small>${x[0]}</small></div>`).join("")}
 document.addEventListener("input",e=>{if(e.target.id==="q")list(e.target.value);if(e.target.id==="un")$("#gr").value=e.target.value==="u"?1:ud(sh.food)[2];if(e.target.id==="gr"||e.target.id==="un")pv()});
@@ -769,8 +909,11 @@ document.addEventListener("click",e=>{
   else if(a==="editfood"){sh.ef=window._r[+t.dataset.i];sh.tab="criar";drawSheet()}
   else if(a==="edit"){const e=day(k)[t.dataset.m][+t.dataset.i];if(!e||!(e.g>0))return;const b=[...S.custom,...FOODS].find(x=>x.n===e.n),u=b?ud(b):["porção","porções",100],r=100/e.g,usaU=!!(e.q&&b);sh={m:t.dataset.m,edit:+t.dataset.i,tab:"buscar",food:{n:e.n,k:e.k*r,c:e.c*r,p:e.p*r,f:e.f*r,u},qv:usaU?Math.round(e.g/u[2]*100)/100:e.g,un:usaU?"u":"g"};drawSheet()}
   else if(a==="saveedit"){const es=day(k)[sh.m],e=es[sh.edit],f=sh.food,u=ud(f),qv=+$("#gr").value,g=grams();if(!e||!(g>0)||!isFinite(g)){$("#gr").focus();return}const r=g/100,m=sh.m;if(!e.id)e.id=uid();Object.assign(e,{g,q:$("#un").value==="u"?qs(qv,u):"",k:f.k*r,c:f.c*r,p:f.p*r,f:f.f*r});commit("entry.add",()=>rowEntry(m,k,e));closeSheet();render()}
-  else if(a==="back"){sh.food=null;drawSheet()}
-  else if(a==="pick"){sh.food=window._r[+t.dataset.i];drawSheet()}
+  else if(a==="back"){sh.food=null;sh.qv=null;sh.un=null;drawSheet()}
+  else if(a==="pick"){sh.food=window._r[+t.dataset.i];sh.qv=null;sh.un=null;drawSheet()}
+  else if(a==="fav"){if(sh&&sh.food&&sh.edit==null){favAlternar(sh.food);const q=$("#gr"),u=$("#un");if(q)sh.qv=String(+q.value||"");if(u)sh.un=u.value;drawSheet()}}
+  else if(a==="exportcsv")exportarCsv();
+  else if(a==="delconta")excluirConta();
   else if(a==="addfood"){const f=sh.food,u=ud(f),qv=+$("#gr").value,g=grams();if(!(g>0)){$("#gr").focus();return}const r=g/100,m=sh.m,e={id:uid(),n:f.n,g,q:$("#un").value==="u"?qs(qv,u):"",k:f.k*r,c:f.c*r,p:f.p*r,f:f.f*r};day(k)[m].push(e);ocultaDef(m,false);commit("entry.add",()=>rowEntry(m,k,e));closeSheet();render()}
   else if(a==="newfood"){const n=$("#nf_n").value.trim(),v=id=>+$("#nf_"+id).value||0;if(!n){$("#nf_n").focus();return}const un=$("#nf_u").value.trim()||"unidade",f={id:uid(),n,k:v("k"),c:v("c"),p:v("p"),f:v("f"),u:[un,un==="unidade"?"unidades":un,v("ug")||100]};if(sh.ef){f.id=sh.ef.id;const i=S.custom.findIndex(x=>x.id===f.id);if(i<0)return;S.custom[i]=f;commit("food.add",()=>rowCustom(f));sh.ef=null;sh.tab="buscar";drawSheet();return}S.custom.unshift(f);commit("food.add",()=>rowCustom(f));sh.food=f;drawSheet()}
   else if(a==="del"){const e=day(k)[t.dataset.m].splice(+t.dataset.i,1)[0];commit("entry.del",()=>e&&e.id?{id:e.id}:null);render()}

@@ -1,4 +1,4 @@
-## Why
+﻿## Why
 
 O botão "Escanear com a câmera" só aparece em navegadores com `BarcodeDetector` (Chrome e Edge). No iPhone (Safari e app instalado) e no Firefox o usuário só pode digitar o número do código. Um leitor em JavaScript como alternativa permite escanear em qualquer aparelho com câmera.
 
@@ -26,7 +26,7 @@ Nenhuma.
 
 - `index.html`: lógica da câmera (`CAM_EAN`, `camIniciar`), carregamento sob demanda do script, meta tag de CSP (`script-src 'self'` e novo hash do script inline), constante `VERSAO`.
 - `sw.js`: lista `ARQUIVOS` e constante `VERSAO`.
-- Novo arquivo `vendor/` com a biblioteca ZXing (versão fixa, licença Apache-2.0) e o registro da origem e da versão.
+- Novo arquivo `vendor/` com a biblioteca ZXing (versão fixa, licença MIT) e o registro da origem e da versão.
 - `README.md`: versão, "Novo na x.y.z", histórico, seção de segurança e remoção da limitação do iPhone.
 - Nova dependência de terceiros (código executado no app), com o risco de cadeia de suprimentos mitigado por cópia local e versão fixa.
 - Aumento do tamanho do cache offline (a ser medido na implementação).

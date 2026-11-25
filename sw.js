@@ -2,10 +2,10 @@
    Ao publicar uma nova versão do app, altere VERSAO aqui e no index.html (devem ser iguais).
    Só atende requisições GET de uma lista fechada de arquivos estáticos. Todo o resto (Supabase,
    login, qualquer outra origem) segue direto para a rede e nunca é guardado em cache. */
-const VERSAO = "1.8.0";
+const VERSAO = "1.10.0";
 const CACHE = "emagrecai-" + VERSAO;
 const RAIZ = new URL("./", self.location).href;
-const ARQUIVOS = ["manifest.webmanifest", "icons/icon-192.png", "icons/icon-512.png", "icons/icon-maskable-512.png", "icons/apple-touch-icon.png", "data/taco.json"];
+const ARQUIVOS = ["manifest.webmanifest", "icons/icon-192.png", "icons/icon-512.png", "icons/icon-maskable-512.png", "icons/apple-touch-icon.png", "data/taco.json", "vendor/zxing.min.js"];
 const ESTATICOS = new Set(ARQUIVOS.map(p => new URL(p, RAIZ).href));
 const SUPABASE_JS = /^https:\/\/cdn\.jsdelivr\.net\/npm\/@supabase\/supabase-js@[\d.]+\//;
 const FONTES = new Set(["https://fonts.googleapis.com", "https://fonts.gstatic.com"]);

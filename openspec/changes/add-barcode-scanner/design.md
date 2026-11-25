@@ -1,4 +1,4 @@
-## Context
+﻿## Context
 
 O leitor atual (`camIniciar` no `index.html`) usa `BarcodeDetector` com `ean_13` e só aparece quando `CAM_EAN` é verdadeiro. O app é um arquivo `index.html` com script inline liberado por hash na CSP (`default-src 'none'`, `script-src` com hash e `cdn.jsdelivr.net`). O service worker guarda uma lista fechada de arquivos estáticos (`ARQUIVOS`). O GitHub Pages não permite cabeçalhos HTTP.
 
@@ -19,7 +19,7 @@ O leitor atual (`camIniciar` no `index.html`) usa `BarcodeDetector` com `ean_13`
    - Alternativa A: carregar do jsDelivr com SRI. Descartada: o leitor deixaria de funcionar offline na primeira vez e dependeria de terceiro em tempo de execução.
    - Alternativa B: `zxing-wasm`. Descartada: exige `wasm-unsafe-eval` na CSP e arquivo maior.
    - Alternativa C: `html5-qrcode` (também baseado em ZXing). Descartada: traz interface própria, que fugiria dos componentes visuais existentes.
-   - Ao implementar, confirmar o tamanho do arquivo e a licença (Apache-2.0) e registrar versão e origem em `vendor/LEIAME.md`.
+   - Ao implementar, confirmar o tamanho do arquivo e a licença (MIT) e registrar versão e origem em `vendor/LEIAME.md`.
 
 2. **Carregamento sob demanda.** Uma função `carregarZxing()` insere um `<script src="vendor/zxing.min.js">` na primeira leitura e devolve a mesma promessa nas chamadas seguintes. Quem usa `BarcodeDetector` nunca baixa o arquivo.
 

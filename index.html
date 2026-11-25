@@ -11,7 +11,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="EmagrecAI">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-AkMoEADNLeM1yvQuR8KZwbmHarn/hQDolMo/V1O3biI=' https://cdn.jsdelivr.net; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://*.googleusercontent.com; connect-src 'self' https://sclzuaoqxjstanugvyyq.supabase.co; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-KI240tmdnXUXydRLltRyVEHZ3OQigUWCcjOf52Lwqvo=' https://cdn.jsdelivr.net; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://*.googleusercontent.com; connect-src 'self' https://sclzuaoqxjstanugvyyq.supabase.co; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
 <title>EmagrecAI – Diário nutricional</title>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
@@ -52,6 +52,7 @@ h1,h2,h3{margin:0}
 .bar{height:8px;border-radius:8px;background:var(--ln);overflow:hidden}
 .bar i{display:block;height:100%;border-radius:8px;transition:width .4s}
 .meal-h{display:flex;align-items:center;justify-content:space-between}
+.tg{color:var(--mut);font-size:18px;width:var(--tap);height:var(--tap);border-radius:50%}
 .meal-h h3{font-size:16px;font-weight:700}
 .meal-h small{color:var(--mut);font-weight:500;margin-left:8px}
 .add{width:var(--tap);height:var(--tap);flex:none;border-radius:50%;background:var(--g);color:#fff;font-size:22px;line-height:1;display:grid;place-items:center}
@@ -165,7 +166,7 @@ const def=()=>({p:{sex:"f",age:30,h:165,w:70,tw:65,act:1.375,goal:"lose",kcal:18
    A chave publicável é pública por natureza; a proteção dos dados é feita por RLS no banco. */
 const SUPABASE_URL="https://sclzuaoqxjstanugvyyq.supabase.co";
 const SUPABASE_KEY="sb_publishable_slijF86mJygHkuv2qnsY-g_RawQNbii";
-const VERSAO="1.8.0";
+const VERSAO="1.10.0";
 const lsGet=k=>{try{return localStorage.getItem(k)}catch(e){return null}};
 const lsSet=(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}};
 const lsDel=k=>{try{localStorage.removeItem(k)}catch(e){}};
@@ -443,6 +444,10 @@ async function lembExportar(){
 }
 /* Aviso de pendência: só para hoje; a dispensa vale por refeição (ou pesagem) e só no dia em que foi feita. */
 function avisosHoje(){let o=null;try{o=JSON.parse(lsGet(AVISO_KEY))}catch(e){}const l=o&&typeof o==="object"&&Array.isArray(o[key(new Date())])?o[key(new Date())]:[];return l.filter(x=>typeof x==="string")}
+/* Refeições com a lista de alimentos oculta: só neste aparelho, vale para todos os dias. */
+const OCULT_KEY="emagrecai-refeicoes-ocultas";
+function ocultasLer(){let o=null;try{o=JSON.parse(lsGet(OCULT_KEY))}catch(e){}return Array.isArray(o)?o.filter(x=>MEALS.some(m=>m[0]===x)):[]}
+function ocultaDef(id,oculta){if(!MEALS.some(m=>m[0]===id))return;const l=ocultasLer().filter(x=>x!==id);if(oculta)l.push(id);lsSet(OCULT_KEY,JSON.stringify(l))}
 function avisoDispensar(id){const l=avisosHoje();if(!l.includes(id))l.push(id);lsSet(AVISO_KEY,JSON.stringify({[key(new Date())]:l}))}
 function avisoPendente(){
   const n=new Date(),k=key(n),agora=n.getHours()*60+n.getMinutes(),d=avisosHoje(),reg=S.log[k]||{},c=[];
@@ -466,9 +471,11 @@ function diary(){
   <div class="stats"><div><span>Meta</span><b>${fmt(g)}</b></div><div><span>Consumido</span><b>${fmt(t.k)}</b></div><div><span>Restante</span><b style="color:${over?"var(--f)":"inherit"}">${fmt(rem)}</b></div></div></div>
   <div class="card macros">${mac("Carboidratos",t.c,gc,"var(--c)")}${mac("Proteínas",t.p,gp,"var(--p)")}${mac("Gorduras",t.f,gf,"var(--f)")}</div>`;
   const d=S.log[k]||{};
+  const ocs=ocultasLer();
   MEALS.forEach(([id,nm])=>{
-    const es=d[id]||[],mk=es.reduce((a,e)=>a+e.k,0);
-    h+=`<div class="card"><div class="meal-h"><h3>${nm}<small>${fmt(mk)} kcal</small></h3><div style="display:flex;align-items:center;gap:8px">${es.length?`<button class="sec btn" data-a="rep" data-m="${id}" style="width:auto;padding:6px 12px" aria-label="Repetir ${nm}">Repetir</button>`:""}<button class="add" data-a="open" data-m="${id}" aria-label="Adicionar em ${nm}">+</button></div></div>`;
+    const es=d[id]||[],mk=es.reduce((a,e)=>a+e.k,0),oc=es.length>0&&ocs.includes(id);
+    h+=`<div class="card"><div class="meal-h"><h3>${nm}<small>${fmt(mk)} kcal${oc?` · ${es.length} ${es.length===1?"item":"itens"}`:""}</small></h3><div style="display:flex;align-items:center;gap:8px">${es.length?`<button class="tg" data-a="ocultar" data-m="${id}" aria-expanded="${!oc}" aria-label="${oc?"Mostrar":"Ocultar"} alimentos de ${nm}">${oc?"▸":"▾"}</button><button class="sec btn" data-a="rep" data-m="${id}" style="width:auto;padding:6px 12px" aria-label="Repetir ${nm}">Repetir</button>`:""}<button class="add" data-a="open" data-m="${id}" aria-label="Adicionar em ${nm}">+</button></div></div>`;
+    if(oc){h+=`</div>`;return}
     h+=es.length?es.map((e,i)=>`<div class="ent"><div><p class="n">${esc(e.n)}</p><p class="d">${e.q?esc(e.q)+" · ":""}${fmt(e.g)} g · C ${f1(e.c)} · P ${f1(e.p)} · G ${f1(e.f)}</p></div><div style="display:flex;align-items:center;gap:4px"><span class="k">${fmt(e.k)}</span>${e.g>0?`<button class="del" data-a="edit" data-m="${id}" data-i="${i}" aria-label="Editar ${esc(e.n)}">✎</button>`:""}<button class="del" data-a="del" data-m="${id}" data-i="${i}" aria-label="Remover ${esc(e.n)}">×</button></div></div>`).join(""):`<p class="empty">Nada registrado. Toque em + para adicionar.</p>`;
     h+=`</div>`;
   });
@@ -642,8 +649,29 @@ async function bcBuscar(){
   }finally{clearTimeout(to);aba.bcBusy=false}
 }
 /* Câmera: só liga por ação do usuário e é desligada ao concluir, cancelar, trocar de aba, fechar ou ocultar a página. */
-let CAM_EAN=false,cam=null;
-if(window.isSecureContext&&navigator.mediaDevices&&navigator.mediaDevices.getUserMedia&&"BarcodeDetector" in window&&BarcodeDetector.getSupportedFormats)BarcodeDetector.getSupportedFormats().then(l=>{CAM_EAN=l.includes("ean_13")}).catch(()=>{});
+const CAM_OK=!!(window.isSecureContext&&navigator.mediaDevices&&navigator.mediaDevices.getUserMedia);let cam=null,zxingP=null;
+/* ZXing local (vendor/zxing.min.js): só é baixado quando o navegador não tem BarcodeDetector com EAN-13. */
+function carregarZxing(){
+  if(window.ZXing)return Promise.resolve();
+  if(!zxingP)zxingP=new Promise((ok,no)=>{const s=document.createElement("script");s.src="vendor/zxing.min.js";s.onload=ok;s.onerror=()=>{zxingP=null;no(new Error("zxing"))};document.head.appendChild(s)});
+  return zxingP;
+}
+/* Devolve uma função que lê um quadro do vídeo e responde com a lista de textos lidos. */
+async function criarLeitor(){
+  if("BarcodeDetector" in window){
+    try{
+      const l=await BarcodeDetector.getSupportedFormats();
+      if(l.includes("ean_13")){const d=new BarcodeDetector({formats:["ean_13"]});return async v=>(await d.detect(v)).map(x=>String(x.rawValue||""))}
+    }catch(e){}
+  }
+  await carregarZxing();
+  const Z=window.ZXing,h=new Map([[Z.DecodeHintType.POSSIBLE_FORMATS,[Z.BarcodeFormat.EAN_13]],[Z.DecodeHintType.TRY_HARDER,true]]),rd=new Z.MultiFormatReader(),cv=document.createElement("canvas"),cx=cv.getContext("2d",{willReadFrequently:true});
+  return async v=>{
+    const w=v.videoWidth,hh=v.videoHeight;if(!w||!hh)return[];
+    const k=Math.min(1,640/w);cv.width=Math.round(w*k);cv.height=Math.round(hh*k);cx.drawImage(v,0,0,cv.width,cv.height);
+    try{return[String(rd.decode(new Z.BinaryBitmap(new Z.HybridBinarizer(new Z.HTMLCanvasElementLuminanceSource(cv))),h).getText())]}catch(e){return[]}
+  };
+}
 function camParar(){
   if(!cam)return;
   clearInterval(cam.t);if(cam.s)cam.s.getTracks().forEach(t=>t.stop());cam=null;
@@ -659,12 +687,13 @@ async function camIniciar(){
   cam.s=s;cam.pend=false;
   const v=$("#bcvid"),w=$("#bcw");v.srcObject=s;w.hidden=false;setBc("Aponte para o código de barras.");
   try{await v.play()}catch(e){}
-  let det;try{det=new BarcodeDetector({formats:["ean_13"]})}catch(e){camParar();setBc("Leitura pela câmera indisponível. Digite o número do código.");return}
+  let lerQuadro;try{lerQuadro=await criarLeitor()}catch(e){if(sh===aba)setBc("Leitura pela câmera indisponível. Digite o número do código.");camParar();return}
+  if(sh!==aba||!cam)return;
   let ler=false;
   cam.t=setInterval(async()=>{
     if(ler||!cam)return;ler=true;
     try{
-      const r=await det.detect(v),c=r.map(x=>String(x.rawValue||"")).find(gtinOk);
+      const c=(await lerQuadro(v)).find(gtinOk);
       if(c&&cam){camParar();$("#bc").value=c;bcBuscar()}
     }catch(e){}
     ler=false;
@@ -694,7 +723,7 @@ function drawSheet(){
   camParar();const el=$("#sheet");el.hidden=false;const mn=MEALS.find(x=>x[0]===sh.m)[1];
   let b="";const ef=sh.ef||null,ev=(x,i)=>ef?esc(String(x)):"",eu=ef?ud(ef):null;
   if(sh.food){const f=sh.food,u=ud(f),m=u[2]/100;b=`<button class="sec btn" data-a="${sh.edit!=null?"close":"back"}" style="width:auto;padding:6px 12px;margin-bottom:12px">‹ Voltar</button><h3>${esc(f.n)}</h3><p class="note" style="margin:2px 0 12px">1 ${u[0]} (${u[2]} g): ${fmt(f.k*m)} kcal · C ${f1(f.c*m)} · P ${f1(f.p*m)} · G ${f1(f.f*m)}</p><div class="grid2"><div><label>Quantidade</label><input id="gr" type="number" inputmode="decimal" step="any" value="${sh.qv!=null?sh.qv:1}"></div><div><label>Medida</label><select id="un"><option value="u">${esc(u[1])}</option><option value="g"${sh.un==="g"?" selected":""}>gramas</option></select></div></div><div class="pv" id="pv"></div>${sh.edit!=null?`<button class="btn" data-a="saveedit">Salvar alterações</button>`:`<button class="btn" data-a="addfood">Adicionar ao ${mn.toLowerCase()}</button>`}`}
-  else b=`<div class="tabs"><button data-a="tab" data-t="buscar" class="${sh.tab==="buscar"?"on":""}">Buscar</button><button data-a="tab" data-t="codigo" class="${sh.tab==="codigo"?"on":""}">Código</button><button data-a="tab" data-t="criar" class="${sh.tab==="criar"?"on":""}">Novo alimento</button></div>`+(sh.tab==="buscar"?`<input id="q" type="search" placeholder="Buscar alimento, ex.: arroz" autocomplete="off"><div class="list" id="list"></div>`:sh.tab==="codigo"?`<div class="field"><label for="bc">Número do código de barras</label><input id="bc" inputmode="numeric" autocomplete="off" placeholder="Ex.: 7891000100103"></div><p class="note" style="margin:0 0 10px">O número fica embaixo das barras, na embalagem do produto.</p><button class="btn" data-a="bcbuscar">Buscar produto</button>${CAM_EAN?`<button class="btn sec bcs" data-a="bcscan">Escanear com a câmera</button>`:""}<div class="bcw" id="bcw" hidden><video id="bcvid" playsinline muted aria-label="Imagem da câmera para ler o código de barras"></video><button class="btn sec" data-a="bccancel">Cancelar</button></div><div class="note" id="bcmsg" aria-live="polite"></div>`:`<div class="field"><label>Nome</label><input id="nf_n" value="${ef?esc(ef.n):""}" placeholder="Ex.: Pão de queijo"></div><div class="grid2"><div><label>Unidade (ex.: fatia)</label><input id="nf_u" value="${ef?esc(eu[0]):""}" placeholder="unidade"></div><div><label>Peso da unidade (g)</label><input id="nf_ug" type="number" inputmode="decimal" value="${ef?ev(eu[2]):100}"></div></div><p class="note" style="margin:0 0 8px">Informe os valores nutricionais por 100 g</p><div class="grid2"><div><label>Calorias (kcal)</label><input id="nf_k" type="number" inputmode="decimal" value="${ef?ev(ef.k):""}"></div><div><label>Carboidratos (g)</label><input id="nf_c" type="number" inputmode="decimal" value="${ef?ev(ef.c):""}"></div><div><label>Proteínas (g)</label><input id="nf_p" type="number" inputmode="decimal" value="${ef?ev(ef.p):""}"></div><div><label>Gorduras (g)</label><input id="nf_f" type="number" inputmode="decimal" value="${ef?ev(ef.f):""}"></div></div><button class="btn" data-a="newfood">${ef?"Salvar alterações":"Salvar alimento"}</button>`);
+  else b=`<div class="tabs"><button data-a="tab" data-t="buscar" class="${sh.tab==="buscar"?"on":""}">Buscar</button><button data-a="tab" data-t="codigo" class="${sh.tab==="codigo"?"on":""}">Código</button><button data-a="tab" data-t="criar" class="${sh.tab==="criar"?"on":""}">Novo alimento</button></div>`+(sh.tab==="buscar"?`<input id="q" type="search" placeholder="Buscar alimento, ex.: arroz" autocomplete="off"><div class="list" id="list"></div>`:sh.tab==="codigo"?`<div class="field"><label for="bc">Número do código de barras</label><input id="bc" inputmode="numeric" autocomplete="off" placeholder="Ex.: 7891000100103"></div><p class="note" style="margin:0 0 10px">O número fica embaixo das barras, na embalagem do produto.</p><button class="btn" data-a="bcbuscar">Buscar produto</button>${CAM_OK?`<button class="btn sec bcs" data-a="bcscan">Escanear com a câmera</button>`:""}<div class="bcw" id="bcw" hidden><video id="bcvid" playsinline muted aria-label="Imagem da câmera para ler o código de barras"></video><button class="btn sec" data-a="bccancel">Cancelar</button></div><div class="note" id="bcmsg" aria-live="polite"></div>`:`<div class="field"><label>Nome</label><input id="nf_n" value="${ef?esc(ef.n):""}" placeholder="Ex.: Pão de queijo"></div><div class="grid2"><div><label>Unidade (ex.: fatia)</label><input id="nf_u" value="${ef?esc(eu[0]):""}" placeholder="unidade"></div><div><label>Peso da unidade (g)</label><input id="nf_ug" type="number" inputmode="decimal" value="${ef?ev(eu[2]):100}"></div></div><p class="note" style="margin:0 0 8px">Informe os valores nutricionais por 100 g</p><div class="grid2"><div><label>Calorias (kcal)</label><input id="nf_k" type="number" inputmode="decimal" value="${ef?ev(ef.k):""}"></div><div><label>Carboidratos (g)</label><input id="nf_c" type="number" inputmode="decimal" value="${ef?ev(ef.c):""}"></div><div><label>Proteínas (g)</label><input id="nf_p" type="number" inputmode="decimal" value="${ef?ev(ef.p):""}"></div><div><label>Gorduras (g)</label><input id="nf_f" type="number" inputmode="decimal" value="${ef?ev(ef.f):""}"></div></div><button class="btn" data-a="newfood">${ef?"Salvar alterações":"Salvar alimento"}</button>`);
   el.innerHTML=`<div class="sheet" role="dialog" aria-label="Adicionar alimento"><div class="hd"><h2 style="margin:0">${mn}</h2><button class="rnd" data-a="close" aria-label="Fechar">×</button></div>${b}</div>`;
   if(!sh.food&&sh.tab==="buscar"){list("");$("#q").focus();carregarTaco()}
   if(!sh.food&&sh.tab==="codigo")$("#bc").focus();
@@ -721,6 +750,7 @@ document.addEventListener("click",e=>{
   else if(a==="day"){cur.setDate(cur.getDate()+ +t.dataset.d);render()}
   else if(a==="mes"){const n=mesVizinho(+t.dataset.d);if(n){mes=n;render()}}
   else if(a==="open")openSheet(t.dataset.m);
+  else if(a==="ocultar"){ocultaDef(t.dataset.m,!ocultasLer().includes(t.dataset.m));render()}
   else if(a==="close")closeSheet();
   else if(a==="rep"){sh={rep:true,m:t.dataset.m,dm:t.dataset.m,k,dk:k};drawRep()}
   else if(a==="repm"){if(MEALS.some(x=>x[0]===t.dataset.m)){sh.dm=t.dataset.m;drawRep()}}
@@ -728,7 +758,7 @@ document.addEventListener("click",e=>{
   else if(a==="repcopiar"){
     if(!sh||!sh.rep||!dv(sh.dk)||!MEALS.some(x=>x[0]===sh.dm)||(sh.dm===sh.m&&sh.dk===sh.k))return;
     const dm=sh.dm,dk=sh.dk,src=day(sh.k)[sh.m].slice(),dest=day(dk)[dm],nm=MEALS.find(x=>x[0]===dm)[1];
-    src.forEach(o=>{const e={...o,id:uid()};dest.push(e);commit("entry.add",()=>rowEntry(dm,dk,e))});
+    src.forEach(o=>{const e={...o,id:uid()};dest.push(e);ocultaDef(dm,false);commit("entry.add",()=>rowEntry(dm,dk,e))});
     closeSheet();render();toast(`${src.length} ${src.length===1?"item copiado":"itens copiados"} para ${nm}, ${dBr(dk)}.`);
   }
   else if(a==="tab"){sh.tab=t.dataset.t;sh.ef=null;drawSheet()}
@@ -741,7 +771,7 @@ document.addEventListener("click",e=>{
   else if(a==="saveedit"){const es=day(k)[sh.m],e=es[sh.edit],f=sh.food,u=ud(f),qv=+$("#gr").value,g=grams();if(!e||!(g>0)||!isFinite(g)){$("#gr").focus();return}const r=g/100,m=sh.m;if(!e.id)e.id=uid();Object.assign(e,{g,q:$("#un").value==="u"?qs(qv,u):"",k:f.k*r,c:f.c*r,p:f.p*r,f:f.f*r});commit("entry.add",()=>rowEntry(m,k,e));closeSheet();render()}
   else if(a==="back"){sh.food=null;drawSheet()}
   else if(a==="pick"){sh.food=window._r[+t.dataset.i];drawSheet()}
-  else if(a==="addfood"){const f=sh.food,u=ud(f),qv=+$("#gr").value,g=grams();if(!(g>0)){$("#gr").focus();return}const r=g/100,m=sh.m,e={id:uid(),n:f.n,g,q:$("#un").value==="u"?qs(qv,u):"",k:f.k*r,c:f.c*r,p:f.p*r,f:f.f*r};day(k)[m].push(e);commit("entry.add",()=>rowEntry(m,k,e));closeSheet();render()}
+  else if(a==="addfood"){const f=sh.food,u=ud(f),qv=+$("#gr").value,g=grams();if(!(g>0)){$("#gr").focus();return}const r=g/100,m=sh.m,e={id:uid(),n:f.n,g,q:$("#un").value==="u"?qs(qv,u):"",k:f.k*r,c:f.c*r,p:f.p*r,f:f.f*r};day(k)[m].push(e);ocultaDef(m,false);commit("entry.add",()=>rowEntry(m,k,e));closeSheet();render()}
   else if(a==="newfood"){const n=$("#nf_n").value.trim(),v=id=>+$("#nf_"+id).value||0;if(!n){$("#nf_n").focus();return}const un=$("#nf_u").value.trim()||"unidade",f={id:uid(),n,k:v("k"),c:v("c"),p:v("p"),f:v("f"),u:[un,un==="unidade"?"unidades":un,v("ug")||100]};if(sh.ef){f.id=sh.ef.id;const i=S.custom.findIndex(x=>x.id===f.id);if(i<0)return;S.custom[i]=f;commit("food.add",()=>rowCustom(f));sh.ef=null;sh.tab="buscar";drawSheet();return}S.custom.unshift(f);commit("food.add",()=>rowCustom(f));sh.food=f;drawSheet()}
   else if(a==="del"){const e=day(k)[t.dataset.m].splice(+t.dataset.i,1)[0];commit("entry.del",()=>e&&e.id?{id:e.id}:null);render()}
   else if(a==="water"){S.water[k]=Math.max(0,(S.water[k]||0)+ +t.dataset.d);commit("water.set",()=>({user_id:U.id,day:k,ml:Math.round(cl(S.water[k],0,20000,0))}));render()}

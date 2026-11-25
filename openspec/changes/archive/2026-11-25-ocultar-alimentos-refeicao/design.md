@@ -25,4 +25,4 @@
 
 - [Usuário esquece que ocultou e acha que perdeu dados] → o cabeçalho mantém kcal e mostra "N itens".
 - [Mudança no script inline invalida a CSP] → recalcular o hash SHA-256 conforme o `README.md`.
-- [Aparelhos antigos ficam com cache] → subir `VERSAO` em `index.html` e `sw.js` para 1.8.0.
+- [Aparelhos antigos ficam com cache] → subir `VERSAO` em `index.html` e `sw.js` para 1.9.0.

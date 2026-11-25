@@ -25,6 +25,6 @@
 ## 5. Verificação
 
 - [x] 5.1 Abrir em `http://localhost:8000`: console sem erros e cache `emagrecai-1.10.0` criado com o arquivo da biblioteca
-- [ ] 5.2 Testar no Chrome (caminho `BarcodeDetector`, sem requisição ao `zxing.min.js`) e com `BarcodeDetector` removido (caminho ZXing)
-- [ ] 5.3 Testar em iPhone real (Safari e app instalado), incluindo permissão negada e sem internet
-- [ ] 5.4 Confirmar que a câmera desliga ao ler, cancelar, trocar de aba, fechar e ocultar a página
+- [x] 5.2 Testar no Chrome (caminho `BarcodeDetector`, sem requisição ao `zxing.min.js`) e com `BarcodeDetector` removido (caminho ZXing)
+- [x] 5.3 Testar em iPhone real (Safari e app instalado), incluindo permissão negada e sem internet
+- [x] 5.4 Confirmar que a câmera desliga ao ler, cancelar, trocar de aba, fechar e ocultar a página

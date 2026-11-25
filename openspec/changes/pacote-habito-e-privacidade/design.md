@@ -10,15 +10,13 @@ Pontos do código que o pacote toca:
 - `profile()`: cards "Conta" (`accountCard`) e "Dados".
 - `logout()`: já apaga `pratocheio:<id>`, a fila e a recusa de importação.
 - `lembExportar()`: já gera e baixa um arquivo (`File` + `navigator.share`, com fallback para `Blob` + `<a download>`).
-- Todas as tabelas de dados têm `user_id ... references auth.users (id) on delete cascade`.
-- `consultar-codigo` é uma função do Supabase com `verify_jwt = false`, CORS por `ORIGENS_PERMITIDAS` e limite de pedidos.
 
 ## Goals / Non-Goals
 
 **Goals:**
 - Lançar um alimento repetido em poucos toques, sem digitar.
 - Mostrar constância e um resumo semanal sem gravar dados novos.
-- Permitir que o usuário leve seus dados embora (CSV) e apague a conta por inteiro.
+- Permitir que o usuário leve seus dados embora (CSV).
 - Manter o padrão do projeto: sem dependências novas, sem build, funcionamento offline.
 
 **Non-Goals:**
@@ -26,6 +24,7 @@ Pontos do código que o pacote toca:
 - Receitas e refeições salvas, exercício e calorias gastas.
 - Notificações do resumo semanal. O resumo só aparece na aba Progresso.
 - Importar o CSV de volta.
+- Excluir a conta pelo app (adiado).
 
 ## Decisions
 
@@ -37,7 +36,7 @@ Os favoritos ficam em `pratocheio:favoritos` (lista de até 50 alimentos), valid
 - **Por que só no aparelho:** o app tem poucos usuários, e lembretes e ocultas já seguem esse modelo. Evita migração, tabela nova, operação nova na fila e mudança no `wipe`.
 - **Alternativa descartada:** tabela `favorite_foods` no Supabase. Sincroniza entre aparelhos, mas custa migração, RLS, fila e importação do visitante. Pode ser feita depois, trocando só a camada de leitura e escrita.
 - **Identificação:** por nome normalizado (`norm(n)`). Favoritar de novo o mesmo nome substitui a cópia.
-- **Limpeza ao sair da conta:** a chave é do aparelho e não contém dados de saúde, então continua após `logout`. Na exclusão de conta ela também é mantida, porque não está ligada à conta. "Apagar todos os dados" não a remove (só apaga registros e metas, como já ocorre com lembretes).
+- **Limpeza ao sair da conta:** a chave é do aparelho e não contém dados de saúde, então continua após `logout`. "Apagar todos os dados" não a remove (só apaga registros e metas, como já ocorre com lembretes).
 
 ### 2. Recentes derivados do diário, sem armazenar nada
 
@@ -73,55 +72,23 @@ Um arquivo `emagrecai-AAAA-MM-DD.csv` com colunas: `data;tipo;refeicao;item;porc
 - **Alternativa descartada:** JSON de backup. Serve para restaurar, mas ninguém pediu importação, e o CSV atende "levar meus dados".
 - **Escopo:** exporta o que está no contexto ativo (visitante ou conta), a partir de `S`, sem rede. Com pendências na fila, o arquivo já contém tudo, porque `S` é a fonte local.
 
-### 6. Exclusão de conta por função do Supabase
+### 6. Versão, CSP e service worker
 
-Nova função `excluir-conta` (`supabase/functions/excluir-conta/index.ts`):
-
-```
- app                          função excluir-conta                Supabase
-  │  POST  Authorization:      │                                    │
-  │  Bearer <access_token> ───▶│ valida origem (CORS)               │
-  │        apikey              │ getUser(token) ───────────────────▶│
-  │                            │◀── usuário (id) ───────────────────│
-  │                            │ admin.deleteUser(id) ─────────────▶│ cascade
-  │◀── 200 { ok: true } ───────│                                    │ apaga dados
-```
-
-- **Autenticação:** `verify_jwt = false` no `config.toml`, como em `consultar-codigo`, porque a chave publicável não é um JWT. A própria função lê o cabeçalho `Authorization`, valida o token com `auth.getUser(token)` e **usa o `id` retornado**, nunca um id enviado no corpo. Assim ninguém apaga a conta de outra pessoa.
-- **Chave de serviço:** `SUPABASE_SERVICE_ROLE_KEY` já é variável padrão das funções do Supabase. Fica só no ambiente da função, nunca no repositório nem no `index.html`.
-- **Dados:** `auth.admin.deleteUser(id)` remove o usuário, e o `on delete cascade` apaga `profiles`, `food_entries`, `water_logs`, `weight_logs` e `custom_foods`. Não é preciso migração. A tabela `produtos_cache` não tem dados do usuário.
-- **CORS e origem:** mesmo mecanismo de `ORIGENS_PERMITIDAS` usado em `consultar-codigo`. Aceita só `POST`.
-- **Respostas:** `200 { ok: true }` ou erro com código estável (`nao_autenticado`, `origem_nao_permitida`, `servico_indisponivel`), sem expor mensagens internas.
-- **Confirmação no app:** o usuário digita `EXCLUIR` em um `prompt()`, que combina com o uso atual de `confirm()`. Antes de chamar, o app avisa que a ação não pode ser desfeita e sugere exportar os dados.
-- **Fluxo no app:** exige conexão. Sem rede, mostra aviso e não faz nada. Em caso de sucesso, o app descarta a fila pendente (inútil depois da exclusão), executa a mesma limpeza local do `logout` (`pratocheio:<id>`, fila, recusa de importação), encerra a sessão local e mostra um aviso. Dados do visitante ficam intactos. Em caso de erro, nada local é apagado.
-- **Ordem:** a função apaga primeiro; o app só limpa o local depois do `200`. Se a limpeza local falhar depois, os dados restantes pertencem a um usuário que não existe mais e são apagados no próximo "Sair".
-- **Limite do Google:** a exclusão remove a conta no Supabase, mas não revoga a autorização do app na conta Google. O texto da confirmação diz isso.
-- **Alternativa descartada:** função SQL `security definer` chamada por RPC. Não consegue apagar de `auth.users` com segurança sem conceder privilégios altos ao papel `authenticated`, o que contraria a revogação feita na versão 1.2.1.
-- **Alternativa descartada:** apagar só as linhas pelo cliente (`wipe`) e deixar o usuário. Deixa e-mail e conta no Supabase, que é justamente o que se quer remover.
-
-### 7. Versão, CSP e service worker
-
-Versão 1.11.0 em `index.html` e `sw.js`. O script inline muda, então o hash da CSP é recalculado. Nenhum arquivo estático novo, então a lista `ARQUIVOS` do `sw.js` não muda. A chamada à função usa `connect-src` do Supabase, que já existe.
+Versão 1.11.1 em `index.html` e `sw.js` (a 1.11.0 já foi publicada com a exclusão de conta, que foi retirada). O script inline muda, então o hash da CSP é recalculado. Nenhum arquivo estático novo, então a lista `ARQUIVOS` do `sw.js` não muda.
 
 ## Risks / Trade-offs
 
 - **Favoritos não sincronizam entre aparelhos** → Aceito: o uso é pessoal e a camada pode ser trocada depois por tabela no Supabase.
 - **Alimento favorito ou recente com valores antigos** (a TACO ou o cadastro mudou) → Os lançamentos antigos já seguem esse modelo ("editar um alimento cadastrado não altera lançamentos antigos"). A cópia é só um atalho, e o usuário vê os valores antes de adicionar.
-- **Exclusão de conta é irreversível** → Confirmação digitada, aviso na tela e sugestão de exportar antes. Não há exclusão automática nem em lote.
-- **Função com chave de serviço aumenta a superfície de ataque** → Só apaga o usuário do token validado, aceita só `POST`, valida a origem, não aceita id no corpo e não devolve detalhes de erro. Se for abusada por alguém com um token válido, o único efeito é apagar a própria conta.
-- **Token expirado no momento da exclusão** → A função devolve `nao_autenticado`, o app pede para entrar de novo e nada é apagado.
 - **CSV aberto em planilha** → Mitigado pelo prefixo anti-fórmula e pelo uso de aspas. Mesmo assim, o arquivo deve ser tratado como dado do usuário.
 - **Constância depende de `tot(k).k > 0`** → Quem só registra água ou peso não conta como dia registrado. É a mesma regra do resumo mensal e evita um segundo conceito de "dia registrado".
 - **Fuso horário:** `key()` usa a data local, como o resto do app, então a virada do dia segue o relógio do aparelho.
 
 ## Migration Plan
 
-1. Publicar o `index.html` e o `sw.js` na versão 1.11.0. Sem mudança de banco, o rollback é voltar o commit.
-2. Publicar a função: `supabase functions deploy excluir-conta`, com `ORIGENS_PERMITIDAS` já definida. Enquanto a função não estiver publicada, o botão "Excluir conta" mostra "indisponível" e nada é apagado, então a ordem de publicação não quebra o app.
-3. Testar a exclusão com uma conta Google de teste antes de usar na conta principal.
-4. Para voltar atrás na função: `supabase functions delete excluir-conta` e remover o botão em uma nova versão. As contas já excluídas não voltam.
+1. Publicar o `index.html` e o `sw.js` na versão 1.11.1. Sem mudança de banco, o rollback é voltar o commit.
 
 ## Decisões confirmadas pelo usuário
 
-- O botão "Excluir conta" fica no card "Conta", porque a ação afeta a conta e não só os registros.
 - A constância aparece só na aba Progresso. O layout do Diário não muda.
+- A exclusão de conta ficou fora deste pacote. A versão 1.11.0 a incluía e a 1.11.1 a retirou, por decisão do usuário. Se voltar, precisa de uma função do Supabase com a chave de serviço, que valide o token e apague só o dono dele (as tabelas já usam `on delete cascade`).

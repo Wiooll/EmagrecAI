@@ -11,7 +11,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="EmagrecAI">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-YNMjB2N4U9+gKdwg9536P3wEGHDCu41QwWWdIWldV9A=' https://cdn.jsdelivr.net; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://*.googleusercontent.com; connect-src 'self' https://sclzuaoqxjstanugvyyq.supabase.co; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-hjkBTdmxQgCo3Ps5bSg+OJL3IZtvsqkDv82wuyAe3tc=' https://cdn.jsdelivr.net; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://*.googleusercontent.com; connect-src 'self' https://sclzuaoqxjstanugvyyq.supabase.co; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
 <title>EmagrecAI – Diário nutricional</title>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
@@ -166,7 +166,7 @@ const def=()=>({p:{sex:"f",age:30,h:165,w:70,tw:65,act:1.375,goal:"lose",kcal:18
    A chave publicável é pública por natureza; a proteção dos dados é feita por RLS no banco. */
 const SUPABASE_URL="https://sclzuaoqxjstanugvyyq.supabase.co";
 const SUPABASE_KEY="sb_publishable_slijF86mJygHkuv2qnsY-g_RawQNbii";
-const VERSAO="1.11.0";
+const VERSAO="1.11.1";
 const lsGet=k=>{try{return localStorage.getItem(k)}catch(e){return null}};
 const lsSet=(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}};
 const lsDel=k=>{try{localStorage.removeItem(k)}catch(e){}};
@@ -354,36 +354,7 @@ async function logout(){
   }
   try{await sb.auth.signOut({scope:"local"})}catch(e){}
   if(U)leave();
-  limparContaLocal(me);
-}
-const limparContaLocal=me=>{if(me)["pratocheio:"+me,"pratocheio:fila:"+me,"pratocheio:recusou:"+me].forEach(lsDel)};
-/* Excluir conta: a função "excluir-conta" do Supabase apaga o usuário do token e, em cascata, os dados dele.
-   Os dados locais só são apagados depois da confirmação do servidor. Os dados do visitante não são tocados. */
-const EXCLUIR_URL=SUPABASE_URL+"/functions/v1/excluir-conta";
-const ERROS_EXCLUIR={nao_autenticado:"Sua sessão expirou. Saia, entre de novo e tente outra vez.",origem_nao_permitida:"Este endereço do app não pode excluir contas.",limite_excedido:"Muitas tentativas seguidas. Aguarde um minuto e tente de novo.",servico_indisponivel:"Não foi possível excluir a conta agora. Tente mais tarde."};
-let excluindo=false;
-async function excluirConta(){
-  if(!U||!sb||excluindo)return;
-  if(!navigator.onLine){toast("Para excluir a conta, conecte-se à internet.");return}
-  const r=prompt("Excluir a conta apaga, de forma definitiva, a sua conta e todos os dados da nuvem: perfil, alimentos lançados, água, peso e alimentos cadastrados. Não dá para desfazer.\n\nA autorização do app na sua conta Google não é revogada, e os dados do modo visitante deste navegador não são apagados.\n\nDica: cancele e use \"Exportar dados (CSV)\" antes.\n\nPara confirmar, digite EXCLUIR.");
-  if(r===null||r.trim()!=="EXCLUIR"){toast("Exclusão cancelada. Nada foi apagado.");return}
-  excluindo=true;const me=U.id,bt=()=>$('[data-a="delconta"]');
-  if(bt())bt().disabled=true;
-  try{
-    const{data}=await sb.auth.getSession(),ses=data&&data.session;
-    if(!ses||!ses.access_token||ses.user.id!==me){toast(ERROS_EXCLUIR.nao_autenticado);return}
-    let res,j=null;
-    try{res=await fetch(EXCLUIR_URL,{method:"POST",headers:{"Content-Type":"application/json",apikey:SUPABASE_KEY,Authorization:"Bearer "+ses.access_token},body:"{}",signal:typeof AbortSignal.timeout==="function"?AbortSignal.timeout(15000):undefined})}
-    catch(e){toast("Não foi possível excluir a conta agora. Verifique a conexão e tente de novo. Se continuar, a exclusão pode estar indisponível.");return}
-    try{j=await res.json()}catch(e){}
-    if(res.status===404&&!(j&&j.erro)){toast("A exclusão de conta está indisponível agora.");return}
-    if(!res.ok||!j||j.ok!==true){toast(ERROS_EXCLUIR[j&&j.erro]||ERROS_EXCLUIR.servico_indisponivel);return}
-    writeQ([],me);
-    try{await sb.auth.signOut({scope:"local"})}catch(e){}
-    if(U)leave();
-    limparContaLocal(me);
-    toast("Conta excluída. Os dados da nuvem foram apagados.");
-  }finally{excluindo=false;if(bt())bt().disabled=false}
+  if(me)["pratocheio:"+me,"pratocheio:fila:"+me,"pratocheio:recusou:"+me].forEach(lsDel);
 }
 function resetAll(){S=def();commit("data.reset",()=>({user_id:U.id}))}
 (function(){const q=new URLSearchParams(location.search),h=new URLSearchParams(location.hash.slice(1));if(q.get("error")||h.get("error")){loginErr=true;history.replaceState(null,"",location.pathname)}})();
@@ -717,7 +688,7 @@ function accountCard(){
   if(U){
     const ini=U.nome.split(/\s+/).filter(Boolean).slice(0,2).map(w=>w[0]).join("").toUpperCase()||"?";
     const av=U.foto?`<img class="av" src="${esc(U.foto)}" alt="" referrerpolicy="no-referrer">`:`<div class="av" aria-hidden="true">${esc(ini)}</div>`;
-    return`<div class="card"><h2>Conta</h2><div class="acc">${av}<div><b>${esc(U.nome)}</b><p class="note" style="margin:0">${esc(U.email)}</p></div></div><p class="note" id="sync" style="margin:0 0 12px">${esc(statusText())}</p><button class="btn sec" data-a="logout">Sair</button><button class="btn dng" data-a="delconta" style="margin-top:10px">Excluir conta</button><p class="note" style="margin:10px 0 0">Excluir a conta apaga todos os seus dados da nuvem. Se quiser guardar uma cópia, use "Exportar dados (CSV)" no card Dados.</p></div>`;
+    return`<div class="card"><h2>Conta</h2><div class="acc">${av}<div><b>${esc(U.nome)}</b><p class="note" style="margin:0">${esc(U.email)}</p></div></div><p class="note" id="sync" style="margin:0 0 12px">${esc(statusText())}</p><button class="btn sec" data-a="logout">Sair</button></div>`;
   }
   const body=auth==="on"?`<p class="note" style="margin:0 0 12px">Entre para sincronizar seus dados entre dispositivos. Sem login, tudo fica salvo apenas neste navegador.</p><button class="btn gbtn" data-a="login">${GLOGO}Entrar com Google</button>`
     :auth==="off"?`<p class="note" style="margin:0">Login indisponível.${authMsg?" "+esc(authMsg):""} O app continua funcionando em modo visitante.</p>`
@@ -913,7 +884,6 @@ document.addEventListener("click",e=>{
   else if(a==="pick"){sh.food=window._r[+t.dataset.i];sh.qv=null;sh.un=null;drawSheet()}
   else if(a==="fav"){if(sh&&sh.food&&sh.edit==null){favAlternar(sh.food);const q=$("#gr"),u=$("#un");if(q)sh.qv=String(+q.value||"");if(u)sh.un=u.value;drawSheet()}}
   else if(a==="exportcsv")exportarCsv();
-  else if(a==="delconta")excluirConta();
   else if(a==="addfood"){const f=sh.food,u=ud(f),qv=+$("#gr").value,g=grams();if(!(g>0)){$("#gr").focus();return}const r=g/100,m=sh.m,e={id:uid(),n:f.n,g,q:$("#un").value==="u"?qs(qv,u):"",k:f.k*r,c:f.c*r,p:f.p*r,f:f.f*r};day(k)[m].push(e);ocultaDef(m,false);commit("entry.add",()=>rowEntry(m,k,e));closeSheet();render()}
   else if(a==="newfood"){const n=$("#nf_n").value.trim(),v=id=>+$("#nf_"+id).value||0;if(!n){$("#nf_n").focus();return}const un=$("#nf_u").value.trim()||"unidade",f={id:uid(),n,k:v("k"),c:v("c"),p:v("p"),f:v("f"),u:[un,un==="unidade"?"unidades":un,v("ug")||100]};if(sh.ef){f.id=sh.ef.id;const i=S.custom.findIndex(x=>x.id===f.id);if(i<0)return;S.custom[i]=f;commit("food.add",()=>rowCustom(f));sh.ef=null;sh.tab="buscar";drawSheet();return}S.custom.unshift(f);commit("food.add",()=>rowCustom(f));sh.food=f;drawSheet()}
   else if(a==="del"){const e=day(k)[t.dataset.m].splice(+t.dataset.i,1)[0];commit("entry.del",()=>e&&e.id?{id:e.id}:null);render()}

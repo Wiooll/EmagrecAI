@@ -2,8 +2,3 @@
 # A proteção está na própria função (código, origem, limites e cache).
 [functions.consultar-codigo]
 verify_jwt = false
-
-# Função de exclusão de conta: o gateway não valida o JWT (a chave publicável não é um JWT).
-# A própria função valida a origem e o token de acesso e só apaga o dono do token.
-[functions.excluir-conta]
-verify_jwt = false

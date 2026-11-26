@@ -52,6 +52,25 @@ O sistema SHALL guardar a chave, o provedor, o modelo e o consentimento apenas n
 - **WHEN** o usuário exporta os dados em CSV
 - **THEN** o arquivo não contém a chave nem as configurações do assistente
 
+### Requirement: Testar o modelo escolhido
+O sistema SHALL exibir o botão "Testar modelo" quando houver chave e modelo escolhido. O teste SHALL enviar ao modelo apenas o texto fixo "uma banana", pelo mesmo caminho do registro por texto, e SHALL mostrar o resultado no card. O teste SHALL NOT enviar dados do usuário nem gravar nada no diário. O botão SHALL ficar desativado enquanto o teste estiver em andamento.
+
+#### Scenario: Modelo funcionando
+- **WHEN** o usuário toca em "Testar modelo" e o modelo usa as ferramentas e propõe um alimento do catálogo
+- **THEN** o card mostra que o modelo está funcionando, o alimento entendido e o tempo de resposta
+
+#### Scenario: Modelo sem ferramentas
+- **WHEN** o modelo responde sem usar as ferramentas do app
+- **THEN** o card avisa que o modelo não usou as ferramentas e sugere escolher outro
+
+#### Scenario: Erro do provedor
+- **WHEN** o provedor responde com erro de chave, limite, sobrecarga ou o aparelho está sem internet
+- **THEN** o card mostra "O teste falhou." seguido da mensagem do erro, sem exibir a chave
+
+#### Scenario: Nada é gravado
+- **WHEN** o teste termina, com sucesso ou não
+- **THEN** o diário não muda
+
 ### Requirement: Remover a chave e limpeza automática
 O sistema SHALL oferecer o botão "Remover chave", que apaga chave, modelo e consentimento e desliga o assistente. O sistema SHALL apagar esses dados também ao sair da conta e em "Apagar todos os dados".
 

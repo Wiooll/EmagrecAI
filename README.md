@@ -2,7 +2,7 @@
 
 Diário alimentar simples para acompanhar calorias, macronutrientes, água e peso. Funciona em um único arquivo HTML, sem build. Com login Google, os dados ficam em um banco Supabase e sincronizam entre dispositivos.
 
-**Versão atual:** 1.15.1
+**Versão atual:** 1.16.0
 
 ## Funcionalidades
 
@@ -20,6 +20,7 @@ Diário alimentar simples para acompanhar calorias, macronutrientes, água e pes
 - **Novo na 1.2.1:** correções de segurança. Ao sair da conta, o cache local, a fila de pendências e a recusa de importação são apagados do navegador. O app passou a ter Content-Security-Policy, e o banco teve os privilégios reduzidos ao mínimo.
 
 - **Novo na 1.3.0:** layout otimizado para celular (botões com área de toque de 44 px, campos sem zoom automático no iOS, telas a partir de 320 px, folha de adicionar alimento ajustada ao teclado virtual) e instalação como app (PWA), com ícone na tela inicial, tela cheia e uso sem internet.
+- **Novo na 1.16.0:** botão "Testar modelo" no card "Assistente de IA" do Perfil. Ele envia ao modelo escolhido o texto fixo "uma banana", sem nenhum dado seu, pelo mesmo caminho do registro por texto (busca no catálogo, ferramentas e validação), e mostra o resultado: modelo funcionando com o alimento entendido e o tempo de resposta, modelo que não usa as ferramentas do app, alimento não encontrado ou o erro do provedor (chave, limite, sobrecarga, sem internet). Nada é lançado no diário. Cada teste conta como um uso na conta do provedor. Sem mudanças nos dados nem no banco.
 - **Novo na 1.15.1:** o assistente de IA mostra uma mensagem própria quando o provedor está sobrecarregado ou fora do ar (erros 500 a 599, como o 503 do Gemini), sugerindo tentar de novo em alguns instantes ou trocar de modelo. Antes, aparecia a mensagem de pedido recusado. Sem mudanças nos dados nem no banco.
 - **Novo na 1.15.0:** Perfil mais organizado. Os cards longos e de uso ocasional (Lembretes, Assistente de IA e Sobre o app) passaram a ser recolhíveis, começam fechados e mostram no cabeçalho um resumo do estado (por exemplo, "Água ativada" ou "Ativado · OpenAI"). Conta, metas, Aparência e Dados continuam abertos. Um card que você abriu continua aberto enquanto usa o app. Sem mudanças nos dados nem no banco.
 - **Novo na 1.14.0:** assistente de IA opcional, com a sua própria chave de API (OpenAI ou Google Gemini). No Perfil, o card "Assistente de IA" vem desligado. Ao ligar, você escolhe o provedor e cola a chave, e o app carrega a lista de modelos de conversa da sua conta para você escolher. Com o assistente pronto, a janela de adicionar alimento ganha a aba "IA": descreva a refeição em texto (o ditado do teclado do celular também funciona) e o assistente propõe os itens. Você confere, muda as quantidades, remove itens e só então toca em "Adicionar tudo". Calorias e macros vêm sempre do catálogo do app (seus alimentos, lista padrão e TACO), nunca do modelo. O assistente não altera metas, não dá orientação nutricional e não é chamado quando o texto tem sinais de transtorno alimentar. Veja "Assistente de IA" abaixo. Sem mudanças no banco.
@@ -99,6 +100,7 @@ A fonte *Plus Jakarta Sans* é carregada do Google Fonts e a biblioteca `@supaba
 - **O que o assistente pode fazer:** só propor itens. Ele busca no catálogo do app (alimentos do usuário, lista padrão e TACO, sem a consulta por código de barras) e devolve ids, quantidades e medidas. O app descarta qualquer texto livre do modelo, ignora ids que não vieram da busca, limita a proposta a 8 itens e aceita de 1 a 2000 g ou de 0,25 a 20 unidades por item. Nada é gravado sem o toque em "Adicionar tudo", e os itens confirmados seguem a mesma fila de sincronização dos lançamentos manuais.
 - **Cuidado com transtornos alimentares:** antes de enviar, o app procura no texto expressões como jejum prolongado, passar fome, compensar, vomitar, purgar e laxante (lista `IA_RISCO` no `index.html`, sem acentos e sem diferença de maiúsculas). Se encontrar, não chama o modelo e mostra uma mensagem que recomenda procurar um profissional de saúde e cita o CVV (188). A lista é simples e não substitui avaliação profissional.
 - **Armazenamento:** provedor, chave, modelo e consentimentos ficam só no `localStorage` do aparelho (`pratocheio:ia`). Não vão ao Supabase nem ao CSV, e são apagados pelo botão "Remover chave", ao sair da conta e em "Apagar todos os dados". Trocar de provedor apaga a chave anterior.
+- **Testar modelo:** com um modelo escolhido, o botão "Testar modelo" envia o texto fixo "uma banana" e mostra se o modelo usou as ferramentas do app, o alimento entendido e o tempo de resposta. O teste não envia dados do usuário, não pede consentimento, não grava nada e conta como um uso na conta do provedor.
 - **Limitações:** o assistente só funciona com internet. O modelo pode errar o alimento ou a quantidade, por isso a conferência antes de lançar é obrigatória. O filtro de modelos é feito pelo nome e pode listar algum modelo que não aceite ferramentas; nesse caso, escolha outro.
 ## Segurança e privacidade
 
@@ -137,6 +139,7 @@ A fonte *Plus Jakarta Sans* é carregada do Google Fonts e a biblioteca `@supaba
 As informações nutricionais são aproximadas e não substituem orientação profissional. Para metas clínicas, consulte um nutricionista.
 
 ## Histórico de versões
+- **1.16.0**: botão "Testar modelo" no card do assistente de IA, com texto fixo e sem gravar nada. O hash da CSP foi atualizado.
 - **1.15.1**: mensagem de provedor sobrecarregado ou fora do ar no assistente de IA (erros 5xx). O hash da CSP foi atualizado.
 - **1.15.0**: cards Lembretes, Assistente de IA e Sobre o app recolhíveis no Perfil, com resumo do estado no cabeçalho. O hash da CSP foi atualizado.
 - **1.14.0**: assistente de IA opcional com chave do próprio usuário (OpenAI ou Gemini), escolha de modelo, aba "IA" para registrar refeições por texto com confirmação, valores sempre do catálogo do app e travas de segurança. A CSP ganhou os dois provedores em `connect-src` e o hash foi atualizado.

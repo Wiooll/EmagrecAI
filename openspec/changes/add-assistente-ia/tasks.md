@@ -45,3 +45,9 @@
 - [ ] 7.2 Testar: assistente desligado (nenhuma requisição aos provedores), chave inválida, chave válida nos dois provedores, troca e desaparecimento de modelo, consentimento, proposta, edição, descarte, confirmação, visitante, conta e sem internet (feito com respostas simuladas; falta repetir com chave real dos dois provedores)
 - [x] 7.3 Testar travas: quantidade absurda, mais de 8 itens, alimento inexistente, texto com HTML, pedido de meta, expressão de transtorno alimentar (sem chamada ao provedor) e ausência da chave em mensagens, console e CSV
 - [x] 7.4 Testar sair da conta e "Apagar todos os dados": a chave deve ser removida do `localStorage`
+
+## 8. Testar modelo (1.16.0)
+
+- [x] 8.1 Botão "Testar modelo" no card, com texto fixo "uma banana" pelo caminho de `iaPropor`, resultado no card e botão desativado durante o teste
+- [x] 8.2 Diferenciar modelo sem ferramentas (`semFerr`), alimento não encontrado e erros do provedor
+- [x] 8.3 Versão 1.16.0, hash da CSP, README e spec `ai-assistant-settings`

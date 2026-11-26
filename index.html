@@ -11,7 +11,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="EmagrecAI">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-uNOPR0oMEfo/FUSGHHKTZvn+R2sYvOAL02YaQiB/N+k=' https://cdn.jsdelivr.net; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://*.googleusercontent.com; connect-src 'self' https://sclzuaoqxjstanugvyyq.supabase.co https://api.openai.com https://generativelanguage.googleapis.com; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-fo9G7zQ/UqdDGnFCrGVDoSJOSFW9hR6J/O4r/2Hffkc=' https://cdn.jsdelivr.net; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://*.googleusercontent.com; connect-src 'self' https://sclzuaoqxjstanugvyyq.supabase.co https://api.openai.com https://generativelanguage.googleapis.com; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
 <title>EmagrecAI – Diário nutricional</title>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
@@ -184,7 +184,7 @@ const def=()=>({p:{sex:"f",age:30,h:165,w:70,tw:65,act:1.375,goal:"lose",kcal:18
    A chave publicável é pública por natureza; a proteção dos dados é feita por RLS no banco. */
 const SUPABASE_URL="https://sclzuaoqxjstanugvyyq.supabase.co";
 const SUPABASE_KEY="sb_publishable_slijF86mJygHkuv2qnsY-g_RawQNbii";
-const VERSAO="1.15.1";
+const VERSAO="1.16.0";
 const lsGet=k=>{try{return localStorage.getItem(k)}catch(e){return null}};
 const lsSet=(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}};
 const lsDel=k=>{try{localStorage.removeItem(k)}catch(e){}};
@@ -855,6 +855,7 @@ function iaCard(){
     if(ocup)h+=`<p class="note">Carregando modelos…</p>`;
     else if(iaSt==="ok")h+=`<div class="field"><label for="ia_modelo">Modelo</label><select id="ia_modelo"><option value="">Escolha um modelo</option>${iaModelos.map(m=>`<option value="${esc(m)}"${m===ia.modelo?" selected":""}>${esc(m)}</option>`).join("")}</select></div>`;
     else h+=`${ia.modelo?`<p class="note" style="margin:0 0 10px">Modelo: ${esc(ia.modelo)}</p>`:""}<button class="btn sec" data-ia="recarregar" style="margin-bottom:10px">${iaSt==="erro"?"Tentar de novo":"Carregar modelos"}</button>`;
+    if(ia.modelo&&!ocup)h+=`<button class="btn sec" data-ia="testar" style="margin-bottom:10px"${iaTestando?" disabled":""}>${iaTestando?"Testando o modelo…":"Testar modelo"}</button>`;
     h+=`<button class="btn dng" data-ia="remover" style="margin-top:4px">Remover chave</button>`;
   }
   if(iaMsg)h+=`<p class="note" role="status">${esc(iaMsg)}</p>`;
@@ -928,7 +929,7 @@ async function iaPropor(texto){
   await iaTaco();
   for(let v=0;v<IA_VOLTAS;v++){
     const r=await ad.conversar(chave,modelo,h,IA_FERR);
-    if(!r.c.length)return{itens:[],avisos:[]};
+    if(!r.c.length)return{itens:[],avisos:[],semFerr:true};
     h.push({r:"m",t:r.t,c:r.c,raw:r.raw});
     const fim=r.c.find(c=>c.n==="propor_itens");
     if(fim)return iaValidar(fim.a&&fim.a.itens,mapa);
@@ -940,7 +941,25 @@ async function iaPropor(texto){
       }else h.push({r:"f",id:c.id,n:c.n,v:{erro:"ferramenta indisponível"}});
     });
   }
-  return{itens:[],avisos:[]};
+  return{itens:[],avisos:[],semFerr:true};
+}
+/* Teste do modelo: envia um texto fixo, sem dados do usuário, pelo mesmo caminho do registro por texto. */
+const IA_TESTE_TXT="uma banana";
+let iaTestando=false;
+async function iaTestar(){
+  if(iaTestando||!ia.on||!ia.chave||!ia.modelo)return;
+  if(navigator.onLine===false){iaMsg=IA_ERROS.offline;iaDesenhar();return}
+  const prov=ia.prov,modelo=ia.modelo,t0=Date.now();
+  iaTestando=true;iaMsg="";iaDesenhar();
+  let m;
+  try{
+    const r=await iaPropor(IA_TESTE_TXT),s=((Date.now()-t0)/1000).toLocaleString("pt-BR",{maximumFractionDigits:1}),ok=r.itens.filter(x=>x.f);
+    m=ok.length?`Modelo funcionando. Ele entendeu "${IA_TESTE_TXT}" como ${ok.map(x=>x.f.n).join(", ")} em ${s} s.`
+      :r.semFerr?"O modelo respondeu, mas não usou as ferramentas do app. Escolha outro modelo."
+      :`O modelo respondeu em ${s} s, mas não encontrou o alimento do teste. Ele pode funcionar mal no registro por texto; considere outro modelo.`;
+  }catch(e){m="O teste falhou. "+(IA_ERROS[e&&e.ia]||IA_ERROS.rede)}
+  iaTestando=false;
+  if(ia.prov===prov&&ia.modelo===modelo){iaMsg=m;iaDesenhar()}
 }
 async function iaPedido(){
   if(!sh||sh.tab!=="ia"||sh.iaBusy||!iaPronta())return;
@@ -1002,6 +1021,7 @@ document.addEventListener("click",e=>{
   else if(a==="prov"){if(IA_LISTA.includes(t.dataset.v)&&t.dataset.v!==ia.prov){ia.prov=t.dataset.v;ia.chave="";ia.modelo="";iaModelos=[];iaSt="";iaMsg="";iaSalvar();iaDesenhar()}}
   else if(a==="conectar")iaConectar();
   else if(a==="recarregar"){if(ia.chave)iaListar(ia.chave)}
+  else if(a==="testar")iaTestar();
   else if(a==="remover"){if(confirm("Remover a chave e as configurações do assistente deste aparelho?")){iaLimpar();iaDesenhar();toast("Chave removida.")}}
   else if(a==="propor")iaPedido();
   else if(a==="rem"){if(sh&&sh.ia){sh.ia.itens.splice(+t.dataset.i,1);if(!sh.ia.itens.length)sh.ia=null;drawSheet()}}

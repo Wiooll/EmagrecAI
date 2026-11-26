@@ -37,9 +37,10 @@ As duas APIs aceitam chamadas diretas do navegador. Falta validar o fluxo comple
 4. **Lista de modelos só depois da chave.** Ao tocar em "Conectar", o app chama `listarModelos`. OpenAI: manter só ids que comecem com `gpt-`, `o1`, `o3` ou `o4` e excluir os que contenham `embedding`, `audio`, `realtime`, `image`, `tts`, `whisper`, `moderation` ou `transcribe`. Gemini: manter os que tiverem `generateContent` em `supportedGenerationMethods` e excluir os de imagem, áudio e *embedding*. A lista é guardada só na memória. O modelo escolhido é guardado, mas a lista é recarregada a cada abertura do card. Se o modelo escolhido sumir da lista, o app pede nova escolha. Como o filtro por nome não é perfeito, o primeiro uso de um modelo que falhe mostra uma mensagem clara, e o usuário troca de modelo.
 
 5. **O assistente roda um laço curto de ferramentas, no aparelho.** Ferramentas expostas ao modelo, todas de leitura:
-   - `buscar_alimento(consulta)`: busca em `S.custom`, `FOODS` e `TACO`, devolve até 5 itens com id e nome, sem nutrientes.
+   - `buscar_alimento(consulta)`: busca em `S.custom`, `FOODS` e `TACO`, devolve até 5 itens com id temporário, nome e porção padrão (ex.: "unidade (50 g)"), sem nutrientes. Se a consulta não achar nada, tenta de novo com menos palavras. No máximo 12 buscas por pedido.
+   - `propor_itens(itens)`: entrega a lista final `{id, descricao, quantidade, medida}` e encerra o laço.
    - `buscar_codigo(codigo)`: não entra nesta change.
-   O modelo devolve a proposta final como uma lista `{alimento_id, quantidade, medida}`. O app resolve o id no catálogo local e **calcula** calorias e macros com os valores por 100 g. Ids inexistentes são descartados e o item aparece como "não encontrado". Limite de 4 voltas do laço e de 8 itens por proposta. Alternativa descartada: deixar o modelo informar kcal e macros, porque modelos erram esses números.
+   O modelo devolve a proposta final pela ferramenta `propor_itens`. O app resolve o id no catálogo local e **calcula** calorias e macros com os valores por 100 g. Ids inexistentes são descartados e o item aparece como "não encontrado". Limite de 4 voltas do laço e de 8 itens por proposta. Alternativa descartada: deixar o modelo informar kcal e macros, porque modelos erram esses números.
 
 6. **Confirmação obrigatória.** O resultado é um cartão com os itens, a refeição de destino e, por item, quantidade editável e botão de remover. "Adicionar tudo" grava pelo mesmo `commit` do lançamento manual. "Descartar" não grava nada. Nenhuma ferramenta escreve em `S`. O assistente não tem acesso a metas, perfil, peso nem histórico.
 
@@ -74,6 +75,11 @@ As duas APIs aceitam chamadas diretas do navegador. Falta validar o fluxo comple
 ## Migration Plan
 
 Sem mudanças no banco. A publicação inclui `index.html`, `sw.js` e `README.md`. Para voltar atrás, basta publicar a versão 1.13.0. Chaves já salvas ficam inertes no `localStorage`, e quem voltar para a 1.14.0 pode removê-las pelo card.
+
+## Notas da implementação
+
+- O filtro de risco não inclui "comi demais" nem "culpa". São frases comuns em registros legítimos ("comi demais no almoço") e bloqueariam o uso sem ganho real de proteção.
+- Testes feitos em 26/11/2026 com respostas simuladas dos dois provedores (sem chave real): filtro de modelos, chave inválida, chave mascarada, consentimento, laço de ferramentas, valores recalculados pelo catálogo, descarte de texto livre e de quantidade absurda, limite de 8 itens, HTML escapado, sem internet, CSV sem chave e limpeza ao sair e em "Apagar todos os dados". O teste com chave real continua pendente (tarefa 1.1).
 
 ## Open Questions
 

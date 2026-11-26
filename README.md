@@ -2,7 +2,7 @@
 
 Diário alimentar simples para acompanhar calorias, macronutrientes, água e peso. Funciona em um único arquivo HTML, sem build. Com login Google, os dados ficam em um banco Supabase e sincronizam entre dispositivos.
 
-**Versão atual:** 1.15.0
+**Versão atual:** 1.15.1
 
 ## Funcionalidades
 
@@ -20,6 +20,7 @@ Diário alimentar simples para acompanhar calorias, macronutrientes, água e pes
 - **Novo na 1.2.1:** correções de segurança. Ao sair da conta, o cache local, a fila de pendências e a recusa de importação são apagados do navegador. O app passou a ter Content-Security-Policy, e o banco teve os privilégios reduzidos ao mínimo.
 
 - **Novo na 1.3.0:** layout otimizado para celular (botões com área de toque de 44 px, campos sem zoom automático no iOS, telas a partir de 320 px, folha de adicionar alimento ajustada ao teclado virtual) e instalação como app (PWA), com ícone na tela inicial, tela cheia e uso sem internet.
+- **Novo na 1.15.1:** o assistente de IA mostra uma mensagem própria quando o provedor está sobrecarregado ou fora do ar (erros 500 a 599, como o 503 do Gemini), sugerindo tentar de novo em alguns instantes ou trocar de modelo. Antes, aparecia a mensagem de pedido recusado. Sem mudanças nos dados nem no banco.
 - **Novo na 1.15.0:** Perfil mais organizado. Os cards longos e de uso ocasional (Lembretes, Assistente de IA e Sobre o app) passaram a ser recolhíveis, começam fechados e mostram no cabeçalho um resumo do estado (por exemplo, "Água ativada" ou "Ativado · OpenAI"). Conta, metas, Aparência e Dados continuam abertos. Um card que você abriu continua aberto enquanto usa o app. Sem mudanças nos dados nem no banco.
 - **Novo na 1.14.0:** assistente de IA opcional, com a sua própria chave de API (OpenAI ou Google Gemini). No Perfil, o card "Assistente de IA" vem desligado. Ao ligar, você escolhe o provedor e cola a chave, e o app carrega a lista de modelos de conversa da sua conta para você escolher. Com o assistente pronto, a janela de adicionar alimento ganha a aba "IA": descreva a refeição em texto (o ditado do teclado do celular também funciona) e o assistente propõe os itens. Você confere, muda as quantidades, remove itens e só então toca em "Adicionar tudo". Calorias e macros vêm sempre do catálogo do app (seus alimentos, lista padrão e TACO), nunca do modelo. O assistente não altera metas, não dá orientação nutricional e não é chamado quando o texto tem sinais de transtorno alimentar. Veja "Assistente de IA" abaixo. Sem mudanças no banco.
 - **Novo na 1.13.0:** escolha do tema no Perfil. O card "Aparência" permite usar Automático (segue o modo claro ou escuro do aparelho), Claro ou Escuro. A escolha fica salva só neste aparelho (`localStorage`, chave `pratocheio:tema`), é aplicada ao abrir o app e muda também a cor da barra do navegador. Sem mudanças no banco.
@@ -136,6 +137,7 @@ A fonte *Plus Jakarta Sans* é carregada do Google Fonts e a biblioteca `@supaba
 As informações nutricionais são aproximadas e não substituem orientação profissional. Para metas clínicas, consulte um nutricionista.
 
 ## Histórico de versões
+- **1.15.1**: mensagem de provedor sobrecarregado ou fora do ar no assistente de IA (erros 5xx). O hash da CSP foi atualizado.
 - **1.15.0**: cards Lembretes, Assistente de IA e Sobre o app recolhíveis no Perfil, com resumo do estado no cabeçalho. O hash da CSP foi atualizado.
 - **1.14.0**: assistente de IA opcional com chave do próprio usuário (OpenAI ou Gemini), escolha de modelo, aba "IA" para registrar refeições por texto com confirmação, valores sempre do catálogo do app e travas de segurança. A CSP ganhou os dois provedores em `connect-src` e o hash foi atualizado.
 - **1.13.0**: tema Automático, Claro ou Escuro no Perfil, salvo no aparelho. O hash da CSP foi atualizado.

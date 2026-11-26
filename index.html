@@ -11,7 +11,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="EmagrecAI">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-r5uo+ARKHtPEd+DpmrBe1IfH8nNiwIzyFCmoRCHyyq4=' https://cdn.jsdelivr.net; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://*.googleusercontent.com; connect-src 'self' https://sclzuaoqxjstanugvyyq.supabase.co https://api.openai.com https://generativelanguage.googleapis.com; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-uNOPR0oMEfo/FUSGHHKTZvn+R2sYvOAL02YaQiB/N+k=' https://cdn.jsdelivr.net; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://*.googleusercontent.com; connect-src 'self' https://sclzuaoqxjstanugvyyq.supabase.co https://api.openai.com https://generativelanguage.googleapis.com; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
 <title>EmagrecAI – Diário nutricional</title>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
@@ -184,7 +184,7 @@ const def=()=>({p:{sex:"f",age:30,h:165,w:70,tw:65,act:1.375,goal:"lose",kcal:18
    A chave publicável é pública por natureza; a proteção dos dados é feita por RLS no banco. */
 const SUPABASE_URL="https://sclzuaoqxjstanugvyyq.supabase.co";
 const SUPABASE_KEY="sb_publishable_slijF86mJygHkuv2qnsY-g_RawQNbii";
-const VERSAO="1.15.0";
+const VERSAO="1.15.1";
 const lsGet=k=>{try{return localStorage.getItem(k)}catch(e){return null}};
 const lsSet=(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}};
 const lsDel=k=>{try{localStorage.removeItem(k)}catch(e){}};
@@ -747,7 +747,7 @@ function suggest(p){const b=10*p.w+6.25*p.h-5*p.age+(p.sex==="m"?5:-161),t=b*p.a
    O assistente só PROPÕE itens: calorias e macros vêm sempre do catálogo do app e nada é lançado sem confirmação. */
 const IA_KEY="pratocheio:ia",IA_LISTA=["openai","gemini"],IA_PROV={openai:"OpenAI",gemini:"Google Gemini"},IA_AJUDA={openai:["https://platform.openai.com/api-keys","platform.openai.com/api-keys"],gemini:["https://aistudio.google.com/apikey","aistudio.google.com/apikey"]};
 const IA_TXT_MAX=500,IA_ITENS_MAX=8,IA_VOLTAS=4,IA_TEMPO=30000,IA_CHAVE_OK=/^[\x21-\x7e]{8,300}$/,IA_MODELO_OK=/^[\w.\-:\/]{1,100}$/;
-const IA_ERROS={chave:"Chave inválida ou sem permissão. Confira a chave e o provedor.",limite:"Limite de uso do provedor atingido. Aguarde um pouco ou confira o plano da sua conta.",modelo:"Modelo indisponível para esta chave. Escolha outro modelo no Perfil.",offline:"Sem internet. O assistente precisa de conexão.",rede:"Não foi possível falar com o provedor. Tente de novo.",tempo:"A resposta demorou demais. Tente de novo.",pedido:"O provedor recusou o pedido. Tente outro modelo no Perfil.",resposta:"A resposta do provedor veio em um formato inesperado. Tente de novo."};
+const IA_ERROS={chave:"Chave inválida ou sem permissão. Confira a chave e o provedor.",limite:"Limite de uso do provedor atingido. Aguarde um pouco ou confira o plano da sua conta.",modelo:"Modelo indisponível para esta chave. Escolha outro modelo no Perfil.",offline:"Sem internet. O assistente precisa de conexão.",rede:"Não foi possível falar com o provedor. Tente de novo.",tempo:"A resposta demorou demais. Tente de novo.",pedido:"O provedor recusou o pedido. Tente outro modelo no Perfil.",indisponivel:"O provedor está sobrecarregado ou fora do ar no momento. Tente de novo em alguns instantes ou escolha outro modelo no Perfil.",resposta:"A resposta do provedor veio em um formato inesperado. Tente de novo."};
 const IA_MSG_RISCO="Percebi sinais que merecem cuidado. O assistente só registra refeições e não dá orientação sobre restrição alimentar. Se a sua relação com a comida está difícil, procure um profissional de saúde, como médico, nutricionista ou psicólogo. O CVV (telefone 188) também acolhe quem precisa conversar.";
 /* Expressões (sem acento, minúsculas) associadas a transtornos alimentares. A lista é conservadora e não substitui avaliação profissional. */
 const IA_RISCO=[/jejum (prolongado|de \d+)/,/jejua(r|ndo)/,/ficar (dias )?sem comer/,/passar fome/,/parar de comer/,/nao (vou )?comer (nada|mais)/,/compensar/,/me castig/,/castigo/,/vomit/,/purg/,/laxante/,/bulimi/,/anorexi/,/compulsao|compulsiv/,/\b[3-9]\d\d ?(kcal|calorias) (por|ao|no) dia/];
@@ -787,7 +787,7 @@ async function iaHttp(url,opc){
     let b=null;try{b=await r.json()}catch(e){}
     if(r.ok&&b&&typeof b==="object")return b;
     const msg=b&&b.error&&typeof b.error.message==="string"?b.error.message:"";
-    throw iaErro(r.status===401||r.status===403||(r.status===400&&/api key/i.test(msg))?"chave":r.status===429?"limite":r.status===404?"modelo":r.ok?"resposta":"pedido");
+    throw iaErro(r.status===401||r.status===403||(r.status===400&&/api key/i.test(msg))?"chave":r.status===429?"limite":r.status===404?"modelo":r.status>=500?"indisponivel":r.ok?"resposta":"pedido");
   }catch(e){
     if(e&&e.ia)throw e;
     throw iaErro(e&&e.name==="AbortError"?"tempo":navigator.onLine===false?"offline":"rede");

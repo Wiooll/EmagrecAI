@@ -2,7 +2,7 @@
 
 Diário alimentar simples para acompanhar calorias, macronutrientes, água e peso. Funciona em um único arquivo HTML, sem build. Com login Google, os dados ficam em um banco Supabase e sincronizam entre dispositivos.
 
-**Versão atual:** 1.11.1
+**Versão atual:** 1.12.0
 
 ## Funcionalidades
 
@@ -20,6 +20,7 @@ Diário alimentar simples para acompanhar calorias, macronutrientes, água e pes
 - **Novo na 1.2.1:** correções de segurança. Ao sair da conta, o cache local, a fila de pendências e a recusa de importação são apagados do navegador. O app passou a ter Content-Security-Policy, e o banco teve os privilégios reduzidos ao mínimo.
 
 - **Novo na 1.3.0:** layout otimizado para celular (botões com área de toque de 44 px, campos sem zoom automático no iOS, telas a partir de 320 px, folha de adicionar alimento ajustada ao teclado virtual) e instalação como app (PWA), com ícone na tela inicial, tela cheia e uso sem internet.
+- **Novo na 1.12.0:** campo de anotações na aba Progresso. É um único texto fixo (até 2000 caracteres), igual em qualquer dia, para observações gerais sobre o acompanhamento. Salva pelo botão "Salvar anotações"; salvar vazio apaga o texto. Com conta, sincroniza pela tabela `user_notes` (aplique a migração `20261126120000_create_user_notes.sql` antes de publicar); no modo visitante fica só no aparelho. "Apagar todos os dados" também apaga as anotações.
 - **Novo na 1.11.1:** a exclusão de conta pelo app, que a 1.11.0 trazia, foi retirada. Todo o restante da 1.11.0 continua igual.
 - **Novo na 1.11.0:** hábito e privacidade.
   - **Favoritos e recentes:** na janela de adicionar alimento, com a busca vazia, aparecem as seções "Favoritos" e "Recentes" antes da lista padrão. A estrela (☆/★) na tela de detalhe do alimento favorita ou remove o favorito (até 50). Os favoritos ficam só no `localStorage` do aparelho (`pratocheio:favoritos`) e guardam uma cópia dos valores do alimento. Os recentes (até 15) são calculados a partir do diário, sem gravar nada.
@@ -62,7 +63,7 @@ A fonte *Plus Jakarta Sans* é carregada do Google Fonts e a biblioteca `@supaba
 ## Configuração do Supabase (para quem publica o próprio app)
 
 1. Crie um projeto no [Supabase](https://supabase.com). O projeto atual é `EmagrecAI---Di-rio-nutricional`.
-2. Aplique as migrações de `supabase/migrations/` em ordem (SQL Editor, `supabase db push` ou MCP). A primeira, `20261117150143_create_emagrecai_schema.sql`, cria as tabelas `profiles`, `food_entries`, `water_logs`, `weight_logs` e `custom_foods` com Row Level Security. A segunda, `20261117190332_revoke_extra_table_privileges.sql`, remove os privilégios `TRUNCATE`, `REFERENCES` e `TRIGGER` dos papéis `authenticated` e `anon`.
+2. Aplique as migrações de `supabase/migrations/` em ordem (SQL Editor, `supabase db push` ou MCP). A primeira, `20261117150143_create_emagrecai_schema.sql`, cria as tabelas `profiles`, `food_entries`, `water_logs`, `weight_logs` e `custom_foods` com Row Level Security. A segunda, `20261117190332_revoke_extra_table_privileges.sql`, remove os privilégios `TRUNCATE`, `REFERENCES` e `TRIGGER` dos papéis `authenticated` e `anon`. A `20261126120000_create_user_notes.sql` cria a tabela `user_notes` (anotações) com RLS.
 3. No [Google Cloud Console](https://console.cloud.google.com/apis/credentials), crie um **OAuth Client ID** do tipo "Aplicativo da Web". Em "URIs de redirecionamento autorizados", informe `https://<ref-do-projeto>.supabase.co/auth/v1/callback`.
 4. No Supabase, em **Authentication > Sign In / Providers > Google**, ative o provedor e informe o Client ID e o Client Secret. O Client Secret fica somente no painel do Supabase.
 5. No Supabase, em **Authentication > URL Configuration**, cadastre as **Redirect URLs** onde o app roda, por exemplo `http://localhost:8000/**` e a URL do GitHub Pages. Ajuste também a **Site URL**.
@@ -122,6 +123,7 @@ A fonte *Plus Jakarta Sans* é carregada do Google Fonts e a biblioteca `@supaba
 As informações nutricionais são aproximadas e não substituem orientação profissional. Para metas clínicas, consulte um nutricionista.
 
 ## Histórico de versões
+- **1.12.0**: campo fixo de anotações na aba Progresso, com sincronização pela nova tabela `user_notes` (migração `20261126120000_create_user_notes.sql`). O hash da CSP foi atualizado.
 - **1.11.1**: retirada a exclusão de conta que a 1.11.0 trazia (botão "Excluir conta" e função `excluir-conta`), por decisão do autor. O hash da CSP foi atualizado.
 - **1.11.0**: favoritos e recentes na busca de alimentos, cards "Constância" e "Resumo da semana" na aba Progresso, exportação dos dados em CSV e, só nesta versão, exclusão da conta pelo app. O hash da CSP foi atualizado.
 - **1.10.0**: leitura do código de barras pela câmera também em navegadores sem `BarcodeDetector` (iPhone, Firefox), com a biblioteca ZXing local em `vendor/zxing.min.js`. A CSP ganhou `'self'` em `script-src`, o hash foi atualizado e o arquivo entrou no cache do service worker.

@@ -4,7 +4,7 @@
 - [x] 1.2 Criar a função que monta os recentes a partir de `S.log` (até 15 alimentos distintos, dias do mais novo ao mais antigo, ignorando `g` ≤ 0), reconstruindo os valores por 100 g e a unidade pelo alimento de mesmo nome em `S.custom`, `FOODS` e `TACO`
 - [x] 1.3 Alterar `list("")` e `drawSheet()` para mostrar as seções "Favoritos" e "Recentes" antes da lista padrão (sem repetir favoritos nos recentes, omitindo seção vazia), mantendo `window._r` e os índices de `data-i` consistentes
 - [x] 1.4 Adicionar o botão ☆/★ na tela de detalhe do alimento (`aria-pressed` e rótulo), com a ação no listener de cliques e atualização do botão sem perder a quantidade digitada
-- [ ] 1.5 Conferir o layout em 320 px e nos temas claro e escuro
+- [x] 1.5 Conferir o layout em 320 px e nos temas claro e escuro
 
 ## 2. Constância e resumo da semana
 
@@ -18,7 +18,7 @@
 - [x] 3.1 Criar a função que monta o CSV a partir de `S` (cabeçalho, linhas `alimento`, `agua` e `peso`, ordenadas por data, `;`, ponto decimal, BOM)
 - [x] 3.2 Criar o escape de campos: aspas duplas com duplicação, e apóstrofo antes de `=`, `+`, `-`, `@`, tabulação e retorno de carro
 - [x] 3.3 Adicionar o botão "Exportar dados (CSV)" no card "Dados" e a ação que entrega o arquivo por compartilhamento ou download (extrair o auxiliar de `lembExportar()` sem mudar o comportamento dos lembretes), com aviso quando não há dados e tratamento de `AbortError`
-- [ ] 3.4 Testar com nome de alimento contendo `=`, aspas, `;` e quebra de linha, e abrir o arquivo no Excel ou no LibreOffice
+- [x] 3.4 Testar com nome de alimento contendo `=`, aspas, `;` e quebra de linha, e abrir o arquivo no Excel ou no LibreOffice
 
 ## 4. Exclusão de conta (adiada)
 
@@ -33,8 +33,8 @@
 
 ## 6. Verificação
 
-- [ ] 6.1 Abrir em `http://localhost:8000` e confirmar que o console não mostra erros e que o cache `emagrecai-1.11.1` foi criado
+- [x] 6.1 Abrir em `http://localhost:8000` e confirmar que o console não mostra erros e que o cache `emagrecai-1.11.1` foi criado
 - [x] 6.2 Testar favoritos e recentes: favoritar, remover, limite de 50, alimento de código de barras, busca digitada e dados corrompidos no `localStorage`
 - [x] 6.3 Testar constância e resumo: sem dados, hoje vazio com ontem registrado, sequência quebrada, uma só pesagem e comparação entre janelas
-- [ ] 6.4 Testar a exportação no modo visitante, com conta, sem internet e no celular (compartilhar e baixar)
+- [x] 6.4 Testar a exportação no modo visitante, com conta, sem internet e no celular (compartilhar e baixar)
 - [x] 6.5 Gerar o resumo das alterações em português do Brasil para a descrição do commit

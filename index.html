@@ -11,7 +11,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="EmagrecAI">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-CJPc8Aw+A9vsqpArzXh334Twc5X3IiKKV2L8fXujCK0=' https://cdn.jsdelivr.net; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://*.googleusercontent.com; connect-src 'self' https://sclzuaoqxjstanugvyyq.supabase.co; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-f4384QjXyMfTz8uC9BcKvWxQ52DrNWJd7kcAhZpd6J4=' https://cdn.jsdelivr.net; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://*.googleusercontent.com; connect-src 'self' https://sclzuaoqxjstanugvyyq.supabase.co; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
 <title>EmagrecAI – Diário nutricional</title>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
@@ -168,11 +168,25 @@ const def=()=>({p:{sex:"f",age:30,h:165,w:70,tw:65,act:1.375,goal:"lose",kcal:18
    A chave publicável é pública por natureza; a proteção dos dados é feita por RLS no banco. */
 const SUPABASE_URL="https://sclzuaoqxjstanugvyyq.supabase.co";
 const SUPABASE_KEY="sb_publishable_slijF86mJygHkuv2qnsY-g_RawQNbii";
-const VERSAO="1.12.0";
+const VERSAO="1.13.0";
 const lsGet=k=>{try{return localStorage.getItem(k)}catch(e){return null}};
 const lsSet=(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}};
 const lsDel=k=>{try{localStorage.removeItem(k)}catch(e){}};
 const NOTES_MAX=2000;
+/* ===== Tema: Automático (segue o aparelho), Claro ou Escuro. Fica só neste aparelho. ===== */
+const TEMA_KEY="pratocheio:tema",TEMAS=[["auto","Automático"],["light","Claro"],["dark","Escuro"]],TEMA_COR={light:"#F2F5F1",dark:"#0F1713"};
+let tema=(v=>TEMAS.some(t=>t[0]===v)?v:"auto")(lsGet(TEMA_KEY));
+function temaAplicar(){
+  const h=document.documentElement;
+  if(tema==="auto")h.removeAttribute("data-theme");else h.setAttribute("data-theme",tema);
+  document.querySelectorAll('meta[name="theme-color"]').forEach(m=>{
+    const escura=(m.getAttribute("media")||"").includes("dark");
+    m.setAttribute("content",TEMA_COR[tema==="auto"?(escura?"dark":"light"):tema]);
+  });
+}
+temaAplicar();
+const temaCard=()=>`<div class="card" id="tema"><h2>Aparência</h2><p class="note" style="margin:0 0 12px">Escolha o tema do app. Em Automático, ele segue o modo claro ou escuro do aparelho. A escolha fica salva só neste aparelho.</p>
+  <div class="tabs" role="radiogroup" aria-label="Tema do app" style="margin-bottom:0">${TEMAS.map(t=>`<button type="button" role="radio" aria-checked="${tema===t[0]}" class="${tema===t[0]?"on":""}" data-a="tema" data-v="${t[0]}">${t[1]}</button>`).join("")}</div></div>`;
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,DAY=/^\d{4}-\d{2}-\d{2}$/;
 const uid=()=>crypto.randomUUID?crypto.randomUUID():"10000000-1000-4000-8000-100000000000".replace(/[018]/g,c=>(c^crypto.getRandomValues(new Uint8Array(1))[0]&15>>c/4).toString(16));
 const cl=(v,a,b,d)=>{v=+v;return isFinite(v)?Math.min(b,Math.max(a,v)):d};
@@ -684,7 +698,7 @@ function profile(){
   <div class="field"><label>Meta diária de calorias (kcal)</label><input id="pf_kcal" type="number" value="${P.kcal}"></div>
   <button class="btn sec" data-a="calc" style="margin-bottom:10px">Calcular meta sugerida</button><button class="btn" data-a="savep">Salvar perfil</button>
   <p class="note">A sugestão usa a fórmula de Mifflin-St Jeor, com 500 kcal a menos para perder peso e 300 a mais para ganhar massa. Os macros seguem a divisão 45% carboidratos, 25% proteínas e 30% gorduras. Para metas clínicas, consulte um nutricionista.</p></div>
-  ${lembCard()}<div class="card"><h2>Dados</h2><p class="note" style="margin:0 0 12px">${U?"Seus dados ficam salvos na sua conta e também neste navegador, para uso sem internet.":"Modo visitante: tudo fica salvo apenas neste navegador."}</p><button class="btn sec" data-a="exportcsv" style="margin-bottom:10px">Exportar dados (CSV)</button><button class="btn dng" data-a="reset">Apagar todos os dados</button></div>
+  ${lembCard()}${temaCard()}<div class="card"><h2>Dados</h2><p class="note" style="margin:0 0 12px">${U?"Seus dados ficam salvos na sua conta e também neste navegador, para uso sem internet.":"Modo visitante: tudo fica salvo apenas neste navegador."}</p><button class="btn sec" data-a="exportcsv" style="margin-bottom:10px">Exportar dados (CSV)</button><button class="btn dng" data-a="reset">Apagar todos os dados</button></div>
   ${installCard()}<div class="card about"><h2>Sobre o app</h2>
   <p class="note" style="margin:0 0 12px">Quer colaborar com o desenvolvimento? A contribuição é voluntária e pode ser feita com código no GitHub ou com apoio via Pix.</p>
   <p class="lk"><label>GitHub</label><a href="${esc(GITHUB_URL)}" target="_blank" rel="noopener noreferrer">${esc(GITHUB_URL.replace("https://",""))}</a></p>
@@ -899,6 +913,7 @@ document.addEventListener("click",e=>{
   else if(a==="water"){S.water[k]=Math.max(0,(S.water[k]||0)+ +t.dataset.d);commit("water.set",()=>({user_id:U.id,day:k,ml:Math.round(cl(S.water[k],0,20000,0))}));render()}
   else if(a==="savenote"){const v=txt($("#nt").value,NOTES_MAX);S.notes=v;commit(v?"note.set":"note.del",()=>v?{user_id:U.id,note:v,updated_at:new Date().toISOString()}:{user_id:U.id});render();toast(v?"Anotações salvas.":"Anotações apagadas.")}
   else if(a==="savew"){const v=parseFloat($("#wt").value);if(v>0){const dk=key(new Date());S.weights[dk]=v;S.p.w=v;commit("weight.set",()=>({user_id:U.id,day:dk,kg:cl(v,10,500,70)}));commit("profile.set",()=>rowProfile(S.p));render()}}
+  else if(a==="tema"){if(TEMAS.some(x=>x[0]===t.dataset.v)){tema=t.dataset.v;lsSet(TEMA_KEY,tema);temaAplicar();render()}}
   else if(a==="lembics")lembExportar();
   else if(a==="lembpad")lembRestaurar();
   else if(a==="avisono"){if(t.dataset.id==="pesagem"||LEMB_REF.some(r=>r[0]===t.dataset.id)){avisoDispensar(t.dataset.id);render()}}

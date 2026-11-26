@@ -2,7 +2,7 @@
 
 Diário alimentar simples para acompanhar calorias, macronutrientes, água e peso. Funciona em um único arquivo HTML, sem build. Com login Google, os dados ficam em um banco Supabase e sincronizam entre dispositivos.
 
-**Versão atual:** 1.12.0
+**Versão atual:** 1.13.0
 
 ## Funcionalidades
 
@@ -20,6 +20,7 @@ Diário alimentar simples para acompanhar calorias, macronutrientes, água e pes
 - **Novo na 1.2.1:** correções de segurança. Ao sair da conta, o cache local, a fila de pendências e a recusa de importação são apagados do navegador. O app passou a ter Content-Security-Policy, e o banco teve os privilégios reduzidos ao mínimo.
 
 - **Novo na 1.3.0:** layout otimizado para celular (botões com área de toque de 44 px, campos sem zoom automático no iOS, telas a partir de 320 px, folha de adicionar alimento ajustada ao teclado virtual) e instalação como app (PWA), com ícone na tela inicial, tela cheia e uso sem internet.
+- **Novo na 1.13.0:** escolha do tema no Perfil. O card "Aparência" permite usar Automático (segue o modo claro ou escuro do aparelho), Claro ou Escuro. A escolha fica salva só neste aparelho (`localStorage`, chave `pratocheio:tema`), é aplicada ao abrir o app e muda também a cor da barra do navegador. Sem mudanças no banco.
 - **Novo na 1.12.0:** campo de anotações na aba Progresso. É um único texto fixo (até 2000 caracteres), igual em qualquer dia, para observações gerais sobre o acompanhamento. Salva pelo botão "Salvar anotações"; salvar vazio apaga o texto. Com conta, sincroniza pela tabela `user_notes` (aplique a migração `20261126120000_create_user_notes.sql` antes de publicar); no modo visitante fica só no aparelho. "Apagar todos os dados" também apaga as anotações.
 - **Novo na 1.11.1:** a exclusão de conta pelo app, que a 1.11.0 trazia, foi retirada. Todo o restante da 1.11.0 continua igual.
 - **Novo na 1.11.0:** hábito e privacidade.
@@ -123,6 +124,7 @@ A fonte *Plus Jakarta Sans* é carregada do Google Fonts e a biblioteca `@supaba
 As informações nutricionais são aproximadas e não substituem orientação profissional. Para metas clínicas, consulte um nutricionista.
 
 ## Histórico de versões
+- **1.13.0**: tema Automático, Claro ou Escuro no Perfil, salvo no aparelho. O hash da CSP foi atualizado.
 - **1.12.0**: campo fixo de anotações na aba Progresso, com sincronização pela nova tabela `user_notes` (migração `20261126120000_create_user_notes.sql`). O hash da CSP foi atualizado.
 - **1.11.1**: retirada a exclusão de conta que a 1.11.0 trazia (botão "Excluir conta" e função `excluir-conta`), por decisão do autor. O hash da CSP foi atualizado.
 - **1.11.0**: favoritos e recentes na busca de alimentos, cards "Constância" e "Resumo da semana" na aba Progresso, exportação dos dados em CSV e, só nesta versão, exclusão da conta pelo app. O hash da CSP foi atualizado.

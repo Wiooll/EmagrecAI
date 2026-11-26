@@ -27,4 +27,4 @@
 ## 5. Verificação
 
 - [x] 5.1 Abrir `http://localhost:8000`, conferir que o console não mostra erros e que o cache `emagrecai-1.12.0` foi criado
-- [ ] 5.2 Testar: salvar, apagar, texto com HTML, limite de 2000, modo visitante, conta offline e sincronização em outro aparelho
+- [x] 5.2 Testar: salvar, apagar, texto com HTML, limite de 2000, modo visitante, conta offline e sincronização em outro aparelho

@@ -1,7 +1,7 @@
 ## 1. Banco de dados
 
 - [x] 1.1 Criar a migração `supabase/migrations/<data>_create_user_notes.sql` com `public.user_notes (user_id primary key, note, updated_at)`, `check` de 1 a 2000 caracteres, RLS e políticas como as das demais tabelas, e privilégios só para `authenticated`
-- [ ] 1.2 Aplicar a migração no projeto Supabase antes de publicar o app e conferir os avisos de segurança (advisors)
+- [x] 1.2 Aplicar a migração no projeto Supabase antes de publicar o app e conferir os avisos de segurança (advisors)
 
 ## 2. Estado e sincronização
 

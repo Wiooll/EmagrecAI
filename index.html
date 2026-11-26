@@ -11,7 +11,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="EmagrecAI">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-A89vlTvH008xy5TLvG+n8/qYdZRqTDrknFuEvLr5Q90=' https://cdn.jsdelivr.net; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://*.googleusercontent.com; connect-src 'self' https://sclzuaoqxjstanugvyyq.supabase.co https://api.openai.com https://generativelanguage.googleapis.com; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-r5uo+ARKHtPEd+DpmrBe1IfH8nNiwIzyFCmoRCHyyq4=' https://cdn.jsdelivr.net; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://*.googleusercontent.com; connect-src 'self' https://sclzuaoqxjstanugvyyq.supabase.co https://api.openai.com https://generativelanguage.googleapis.com; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
 <title>EmagrecAI – Diário nutricional</title>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
@@ -100,6 +100,14 @@ h2{font-size:17px;margin-bottom:12px}
 .pv div{background:var(--bg);border-radius:12px;padding:10px 4px}.pv b{display:block;font-size:17px}.pv small{color:var(--mut);font-size:12px}
 .sum{display:flex;justify-content:space-between;color:var(--mut);font-size:13px;margin-top:8px}
 .note{color:var(--mut);font-size:13px;margin:8px 0 0}
+.note.sp{margin:0 0 12px}
+.fold>summary{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:var(--tap);cursor:pointer;list-style:none}
+.fold>summary::-webkit-details-marker{display:none}
+.fold>summary h2{margin:0}
+.fold>summary .res{margin-left:auto;color:var(--mut);font-size:13px;text-align:right}
+.fold>summary::after{content:"";width:8px;height:8px;border:solid var(--mut);border-width:0 2px 2px 0;transform:rotate(45deg);flex:none;margin:0 4px 4px 2px}
+.fold[open]>summary{margin-bottom:12px}
+.fold[open]>summary::after{transform:rotate(-135deg);margin-bottom:-4px}
 svg text{fill:var(--mut);font-size:10px;font-family:inherit}
 .acc{display:flex;align-items:center;gap:12px;margin-bottom:10px}
 .acc p{margin:0}
@@ -176,7 +184,7 @@ const def=()=>({p:{sex:"f",age:30,h:165,w:70,tw:65,act:1.375,goal:"lose",kcal:18
    A chave publicável é pública por natureza; a proteção dos dados é feita por RLS no banco. */
 const SUPABASE_URL="https://sclzuaoqxjstanugvyyq.supabase.co";
 const SUPABASE_KEY="sb_publishable_slijF86mJygHkuv2qnsY-g_RawQNbii";
-const VERSAO="1.14.0";
+const VERSAO="1.15.0";
 const lsGet=k=>{try{return localStorage.getItem(k)}catch(e){return null}};
 const lsSet=(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}};
 const lsDel=k=>{try{localStorage.removeItem(k)}catch(e){}};
@@ -193,7 +201,7 @@ function temaAplicar(){
   });
 }
 temaAplicar();
-const temaCard=()=>`<div class="card" id="tema"><h2>Aparência</h2><p class="note" style="margin:0 0 12px">Escolha o tema do app. Em Automático, ele segue o modo claro ou escuro do aparelho. A escolha fica salva só neste aparelho.</p>
+const temaCard=()=>`<div class="card" id="tema"><h2>Aparência</h2><p class="note sp">Escolha o tema do app. Em Automático, ele segue o modo claro ou escuro do aparelho. A escolha fica salva só neste aparelho.</p>
   <div class="tabs" role="radiogroup" aria-label="Tema do app" style="margin-bottom:0">${TEMAS.map(t=>`<button type="button" role="radio" aria-checked="${tema===t[0]}" class="${tema===t[0]?"on":""}" data-a="tema" data-v="${t[0]}">${t[1]}</button>`).join("")}</div></div>`;
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,DAY=/^\d{4}-\d{2}-\d{2}$/;
 const uid=()=>crypto.randomUUID?crypto.randomUUID():"10000000-1000-4000-8000-100000000000".replace(/[018]/g,c=>(c^crypto.getRandomValues(new Uint8Array(1))[0]&15>>c/4).toString(16));
@@ -232,6 +240,10 @@ function statusText(){
 }
 function paintNet(){const el=$("#sync");if(el)el.textContent=statusText()}
 function toast(m){const t=$("#toast");if(!t)return;t.textContent=m;t.hidden=false;clearTimeout(tt);tt=setTimeout(()=>{t.hidden=true},6000)}
+/* Cards recolhíveis do Perfil. O estado aberto/fechado fica só em memória, para sobreviver aos redesenhos. */
+const perfilAb={};
+function foldAbrir(id,titulo,resumo,extra){return`<details class="card fold${extra?" "+extra:""}" id="${id}"${perfilAb[id]?" open":""}><summary><h2>${titulo}</h2><span class="res">${esc(resumo)}</span></summary>`}
+document.addEventListener("toggle",e=>{const d=e.target;if(d&&d.classList&&d.classList.contains("fold"))perfilAb[d.id]=d.open},true);
 function softRender(){const a=document.activeElement;if(a&&a.matches&&a.matches("#app input,#app select,#app textarea"))return;render()}
 /* Registra uma alteração: sempre salva localmente; com conta, também enfileira e envia ao banco. */
 function commit(t,fn){
@@ -422,8 +434,8 @@ function lembCard(){
   const L=LEMB,a=L.agua,inv=lembInvalida(L),dis=a.ativo?"":"disabled";
   const hr=(id,l,v,x)=>`<div><label for="lb_${id}">${l}</label><input id="lb_${id}" data-lb="1" type="time" value="${v}" ${x||""}></div>`;
   const o=(v,l,c)=>`<option value="${v}" ${String(c)===String(v)?"selected":""}>${l}</option>`;
-  return`<div class="card" id="lemb"><h2>Lembretes</h2>
-  <p class="note" style="margin:0 0 12px">Escolha os horários e adicione os lembretes ao calendário do aparelho. Na aba Diário, o app também avisa quando uma refeição ou a pesagem estiver pendente. Os horários ficam salvos só neste aparelho.</p>
+  return`${foldAbrir("lemb","Lembretes",a.ativo?"Água ativada":"Água desativada")}
+  <p class="note sp">Escolha os horários e adicione os lembretes ao calendário do aparelho. Na aba Diário, o app também avisa quando uma refeição ou a pesagem estiver pendente. Os horários ficam salvos só neste aparelho.</p>
   <div class="grid2">${LEMB_REF.map(r=>hr(r[0],r[1],L[r[0]])).join("")}</div>
   <div class="grid2"><div><label for="lb_pdia">Pesagem semanal</label><select id="lb_pdia" data-lb="1">${DIAS_SEM.map((n,i)=>o(i,n,L.pesagem.dia)).join("")}</select></div>${hr("phora","Horário da pesagem",L.pesagem.hora)}</div>
   <label class="chk" for="lb_aon"><input id="lb_aon" data-lb="1" type="checkbox" ${a.ativo?"checked":""}>Lembrar de beber água</label>
@@ -433,7 +445,7 @@ function lembCard(){
   <p class="note" id="lb_err" style="color:var(--f)" ${inv?"":"hidden"}>O horário final da água precisa ser depois do inicial.</p>
   <button class="btn" id="lb_ics" data-a="lembics" ${inv?"disabled":""}>Adicionar ao calendário</button>
   <button class="btn sec" data-a="lembpad" style="margin-top:10px">Restaurar padrões</button>
-  <p class="note">Ao mudar um horário, apague os lembretes antigos do calendário antes de importar de novo, para não ficar com eventos repetidos. O alarme depende das notificações do seu aplicativo de calendário.</p></div>`;
+  <p class="note">Ao mudar um horário, apague os lembretes antigos do calendário antes de importar de novo, para não ficar com eventos repetidos. O alarme depende das notificações do seu aplicativo de calendário.</p></details>`;
 }
 /* Lê os campos do card e grava. Campo vazio ou inválido volta ao valor anterior. */
 function lembAlterar(){
@@ -706,12 +718,12 @@ function profile(){
   <div class="field"><label>Meta diária de calorias (kcal)</label><input id="pf_kcal" type="number" value="${P.kcal}"></div>
   <button class="btn sec" data-a="calc" style="margin-bottom:10px">Calcular meta sugerida</button><button class="btn" data-a="savep">Salvar perfil</button>
   <p class="note">A sugestão usa a fórmula de Mifflin-St Jeor, com 500 kcal a menos para perder peso e 300 a mais para ganhar massa. Os macros seguem a divisão 45% carboidratos, 25% proteínas e 30% gorduras. Para metas clínicas, consulte um nutricionista.</p></div>
-  ${lembCard()}${temaCard()}${iaCard()}<div class="card"><h2>Dados</h2><p class="note" style="margin:0 0 12px">${U?"Seus dados ficam salvos na sua conta e também neste navegador, para uso sem internet.":"Modo visitante: tudo fica salvo apenas neste navegador."}</p><button class="btn sec" data-a="exportcsv" style="margin-bottom:10px">Exportar dados (CSV)</button><button class="btn dng" data-a="reset">Apagar todos os dados</button></div>
-  ${installCard()}<div class="card about"><h2>Sobre o app</h2>
-  <p class="note" style="margin:0 0 12px">Quer colaborar com o desenvolvimento? A contribuição é voluntária e pode ser feita com código no GitHub ou com apoio via Pix.</p>
+  ${lembCard()}${temaCard()}${iaCard()}<div class="card"><h2>Dados</h2><p class="note sp">${U?"Seus dados ficam salvos na sua conta e também neste navegador, para uso sem internet.":"Modo visitante: tudo fica salvo apenas neste navegador."}</p><button class="btn sec" data-a="exportcsv" style="margin-bottom:10px">Exportar dados (CSV)</button><button class="btn dng" data-a="reset">Apagar todos os dados</button></div>
+  ${installCard()}${foldAbrir("about","Sobre o app","v"+VERSAO,"about")}
+  <p class="note sp">Quer colaborar com o desenvolvimento? A contribuição é voluntária e pode ser feita com código no GitHub ou com apoio via Pix.</p>
   <p class="lk"><label>GitHub</label><a href="${esc(GITHUB_URL)}" target="_blank" rel="noopener noreferrer">${esc(GITHUB_URL.replace("https://",""))}</a></p>
   <label for="pixkey">Chave Pix</label><input id="pixkey" class="pix" readonly value="${esc(PIX_KEY)}"><button class="btn sec" data-a="copypix">Copiar chave Pix</button>
-  <p class="note" style="margin:14px 0 0">Alimentos: Tabela Brasileira de Composição de Alimentos (TACO, NEPA/UNICAMP, 4ª edição, 2011). Produtos por código de barras: Open Food Facts, licença ODbL.</p></div>
+  <p class="note" style="margin:14px 0 0">Alimentos: Tabela Brasileira de Composição de Alimentos (TACO, NEPA/UNICAMP, 4ª edição, 2011). Produtos por código de barras: Open Food Facts, licença ODbL.</p></details>
   <p class="ver">EmagrecAI v${VERSAO}</p>`;
 }
 const GLOGO='<svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.5 5.4 2.6 13.2l7.9 6.1C12.4 13.6 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.6 3-2.3 5.5-4.8 7.2l7.5 5.8c4.4-4.1 7.1-10.1 7.1-17.5z"/><path fill="#FBBC05" d="M10.5 28.7c-.5-1.5-.8-3-.8-4.7s.3-3.2.8-4.7l-7.9-6.1C1 16.4 0 20.1 0 24s1 7.6 2.6 10.8l7.9-6.1z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.5-5.8c-2.1 1.4-4.8 2.3-8.4 2.3-6.3 0-11.6-4.1-13.5-9.8l-7.9 6.1C6.5 42.6 14.6 48 24 48z"/></svg>';
@@ -721,7 +733,7 @@ function accountCard(){
     const av=U.foto?`<img class="av" src="${esc(U.foto)}" alt="" referrerpolicy="no-referrer">`:`<div class="av" aria-hidden="true">${esc(ini)}</div>`;
     return`<div class="card"><h2>Conta</h2><div class="acc">${av}<div><b>${esc(U.nome)}</b><p class="note" style="margin:0">${esc(U.email)}</p></div></div><p class="note" id="sync" style="margin:0 0 12px">${esc(statusText())}</p><button class="btn sec" data-a="logout">Sair</button></div>`;
   }
-  const body=auth==="on"?`<p class="note" style="margin:0 0 12px">Entre para sincronizar seus dados entre dispositivos. Sem login, tudo fica salvo apenas neste navegador.</p><button class="btn gbtn" data-a="login">${GLOGO}Entrar com Google</button>`
+  const body=auth==="on"?`<p class="note sp">Entre para sincronizar seus dados entre dispositivos. Sem login, tudo fica salvo apenas neste navegador.</p><button class="btn gbtn" data-a="login">${GLOGO}Entrar com Google</button>`
     :auth==="off"?`<p class="note" style="margin:0">Login indisponível.${authMsg?" "+esc(authMsg):""} O app continua funcionando em modo visitante.</p>`
     :`<p class="note" style="margin:0">Carregando o login…</p>`;
   return`<div class="card"><h2>Conta</h2>${body}</div>`;
@@ -832,8 +844,8 @@ const IA_AD={
 /* ----- Configuração (card no Perfil) ----- */
 function iaCard(){
   const nome=IA_PROV[ia.prov],rad=(on,a,v,l)=>`<button type="button" role="radio" aria-checked="${on}" class="${on?"on":""}" data-ia="${a}"${v?` data-v="${v}"`:""}>${l}</button>`;
-  let h=`<div class="card" id="ia"><h2>Assistente de IA</h2><p class="note" style="margin:0 0 12px">Recurso opcional. Descreva em texto o que você comeu e o assistente sugere os itens para você conferir antes de lançar. Usa a sua própria chave de API, guardada só neste aparelho. O texto que você digitar é enviado ao provedor escolhido. Nada é lançado sem a sua confirmação, e o assistente nunca altera suas metas. Ele não substitui a orientação de um nutricionista.</p><div class="tabs" role="radiogroup" aria-label="Assistente de IA">${rad(!ia.on,"desligar","","Desligado")}${rad(ia.on,"ligar","","Ligado")}</div>`;
-  if(!ia.on)return h+`</div>`;
+  let h=`${foldAbrir("ia","Assistente de IA",ia.on?"Ativado · "+nome:"Desativado")}<p class="note sp">Recurso opcional. Descreva em texto o que você comeu e o assistente sugere os itens para você conferir antes de lançar. Usa a sua própria chave de API, guardada só neste aparelho. O texto que você digitar é enviado ao provedor escolhido. Nada é lançado sem a sua confirmação, e o assistente nunca altera suas metas. Ele não substitui a orientação de um nutricionista.</p><div class="tabs" role="radiogroup" aria-label="Assistente de IA">${rad(!ia.on,"desligar","","Desligado")}${rad(ia.on,"ligar","","Ligado")}</div>`;
+  if(!ia.on)return h+`</details>`;
   h+=`<label>Provedor</label><div class="tabs" role="radiogroup" aria-label="Provedor de IA">${IA_LISTA.map(p=>rad(ia.prov===p,"prov",p,IA_PROV[p])).join("")}</div>`;
   const ocup=iaSt==="carregando";
   if(!ia.chave){
@@ -847,7 +859,7 @@ function iaCard(){
   }
   if(iaMsg)h+=`<p class="note" role="status">${esc(iaMsg)}</p>`;
   if(iaPronta())h+=`<p class="note">Pronto. Ao adicionar um alimento, use a aba "IA".</p>`;
-  return h+`</div>`;
+  return h+`</details>`;
 }
 function iaDesenhar(){const el=$("#ia");if(el&&view==="perfil")el.outerHTML=iaCard()}
 /* Carrega os modelos do provedor. Só grava a chave nova depois que a listagem funciona. */
@@ -1130,7 +1142,7 @@ function drawRep(){
   const prox=key(px),igual=sh.dm===sh.m&&sh.dk===k,on=c=>c?"on":"";
   const ms=MEALS.map(([id,nm])=>`<button data-a="repm" data-m="${id}" class="${on(sh.dm===id)}" style="flex:1 1 45%">${nm}</button>`).join("");
   el.innerHTML=`<div class="sheet" role="dialog" aria-label="Repetir refeição"><div class="hd"><h2 style="margin:0">Repetir ${mn.toLowerCase()}</h2><button class="rnd" data-a="close" aria-label="Fechar">×</button></div>
-  <p class="note" style="margin:0 0 12px">${n} ${n===1?"item será copiado":"itens serão copiados"} para:</p>
+  <p class="note sp">${n} ${n===1?"item será copiado":"itens serão copiados"} para:</p>
   <label>Refeição</label><div class="tabs" style="flex-wrap:wrap">${ms}</div>
   <label>Dia</label><div class="tabs"><button data-a="repd" data-d="${k}" class="${on(sh.dk===k)}">Este dia</button><button data-a="repd" data-d="${prox}" class="${on(sh.dk===prox)}">Dia seguinte</button></div>
   <div class="field"><label for="rd">Ou escolha uma data</label><input id="rd" type="date" value="${sh.dk}"></div>
@@ -1238,7 +1250,7 @@ const standalone=()=>matchMedia("(display-mode: standalone)").matches||navigator
 const ehIOS=()=>/iphone|ipad|ipod/i.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
 function installCard(){
   if(standalone())return"";
-  if(instEv)return`<div class="card"><h2>Instalar app</h2><p class="note" style="margin:0 0 12px">Instale o EmagrecAI na tela inicial para abrir em tela cheia e usar sem internet.</p><button class="btn" data-a="install">Instalar</button></div>`;
+  if(instEv)return`<div class="card"><h2>Instalar app</h2><p class="note sp">Instale o EmagrecAI na tela inicial para abrir em tela cheia e usar sem internet.</p><button class="btn" data-a="install">Instalar</button></div>`;
   if(ehIOS())return`<div class="card"><h2>Instalar app</h2><p class="note" style="margin:0">No Safari, toque em <b>Compartilhar</b> e depois em <b>Adicionar à Tela de Início</b>. O app abre em tela cheia e funciona sem internet.</p></div>`;
   return"";
 }
